@@ -1,0 +1,22 @@
+CC := gcc -std=c99
+CCC := g++ -std=c++11
+LIB = cpu.cpp riscv.cpp lib.cpp
+TARGET = asm vm dasm
+
+all: $(TARGET)
+
+asm: asm.cpp parser.cpp $(LIB)
+	$(CCC) -D__ASM__ $^ -o $@
+
+dasm: dasm.cpp $(LIB)
+	$(CCC) -D__DASM__ $^ -o $@
+
+vm: vm.cpp dasm.cpp $(LIB)
+	$(CCC) -D__VM__ $^ -o $@
+
+obj: obj.cpp
+	$(CC) -c ../c6/c6.c -o c6.o
+	$(CCC) $^ c6.o -o $@
+
+clean:
+	rm -f $(TARGET) *.o *.exe

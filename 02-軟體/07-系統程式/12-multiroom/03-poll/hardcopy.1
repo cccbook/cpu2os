@@ -1,0 +1,17 @@
+guest@localhost:~/sp/09-linux/c/02-multiroom/03-poll$ gcc client.c -o client
+/tmp/ccVU0Zke.o: In function `main':
+client.c:(.text+0x1ce): undefined reference to `pthread_create'
+collect2: error: ld returned 1 exit status
+guest@localhost:~/sp/09-linux/c/02-multiroom/03-poll$ gcc client.c -o client -lpthread
+guest@localhost:~/sp/09-linux/c/02-multiroom/03-poll$ ./client 8881
+Segmentation fault (core dumped)
+guest@localhost:~/sp/09-linux/c/02-multiroom/03-poll$ ./client 8887
+Segmentation fault (core dumped)
+guest@localhost:~/sp/09-linux/c/02-multiroom/03-poll$ ./client ccc 127.0.0.1 8887
+snoopy: hi
+snoopy: i am snoopy
+
+
+
+
+

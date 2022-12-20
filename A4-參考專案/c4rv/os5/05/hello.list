@@ -1,0 +1,94 @@
+
+hello.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00000010 <isr_vectors>:
+  10:	00 00 00 00 30 01 00 00                             ....0...
+
+00000018 <puts>:
+  18:	fe010113          	addi	sp,sp,-32
+  1c:	00812e23          	sw	s0,28(sp)
+  20:	02010413          	addi	s0,sp,32
+  24:	fea42623          	sw	a0,-20(s0)
+  28:	0380006f          	j	60 <puts+0x48>
+  2c:	00000013          	nop
+  30:	400047b7          	lui	a5,0x40004
+  34:	40078793          	addi	a5,a5,1024 # 40004400 <reset_handler+0x400042d0>
+  38:	0007a783          	lw	a5,0(a5)
+  3c:	0807f793          	andi	a5,a5,128
+  40:	fe0788e3          	beqz	a5,30 <puts+0x18>
+  44:	fec42783          	lw	a5,-20(s0)
+  48:	00178713          	addi	a4,a5,1
+  4c:	fee42623          	sw	a4,-20(s0)
+  50:	0007c703          	lbu	a4,0(a5)
+  54:	400047b7          	lui	a5,0x40004
+  58:	40478793          	addi	a5,a5,1028 # 40004404 <reset_handler+0x400042d4>
+  5c:	00e7a023          	sw	a4,0(a5)
+  60:	fec42783          	lw	a5,-20(s0)
+  64:	0007c783          	lbu	a5,0(a5)
+  68:	fc0792e3          	bnez	a5,2c <puts+0x14>
+  6c:	00000793          	li	a5,0
+  70:	00078513          	mv	a0,a5
+  74:	01c12403          	lw	s0,28(sp)
+  78:	02010113          	addi	sp,sp,32
+  7c:	00008067          	ret
+
+00000080 <main>:
+  80:	ff010113          	addi	sp,sp,-16
+  84:	00112623          	sw	ra,12(sp)
+  88:	00812423          	sw	s0,8(sp)
+  8c:	01010413          	addi	s0,sp,16
+  90:	400217b7          	lui	a5,0x40021
+  94:	01878793          	addi	a5,a5,24 # 40021018 <reset_handler+0x40020ee8>
+  98:	0007a703          	lw	a4,0(a5)
+  9c:	400217b7          	lui	a5,0x40021
+  a0:	01878793          	addi	a5,a5,24 # 40021018 <reset_handler+0x40020ee8>
+  a4:	00576713          	ori	a4,a4,5
+  a8:	00e7a023          	sw	a4,0(a5)
+  ac:	400217b7          	lui	a5,0x40021
+  b0:	01c78793          	addi	a5,a5,28 # 4002101c <reset_handler+0x40020eec>
+  b4:	0007a683          	lw	a3,0(a5)
+  b8:	400217b7          	lui	a5,0x40021
+  bc:	01c78793          	addi	a5,a5,28 # 4002101c <reset_handler+0x40020eec>
+  c0:	00020737          	lui	a4,0x20
+  c4:	00e6e733          	or	a4,a3,a4
+  c8:	00e7a023          	sw	a4,0(a5)
+  cc:	400117b7          	lui	a5,0x40011
+  d0:	80078793          	addi	a5,a5,-2048 # 40010800 <reset_handler+0x400106d0>
+  d4:	00005737          	lui	a4,0x5
+  d8:	b0070713          	addi	a4,a4,-1280 # 4b00 <reset_handler+0x49d0>
+  dc:	00e7a023          	sw	a4,0(a5)
+  e0:	400117b7          	lui	a5,0x40011
+  e4:	80478793          	addi	a5,a5,-2044 # 40010804 <reset_handler+0x400106d4>
+  e8:	44444737          	lui	a4,0x44444
+  ec:	44470713          	addi	a4,a4,1092 # 44444444 <reset_handler+0x44444314>
+  f0:	00e7a023          	sw	a4,0(a5)
+  f4:	400047b7          	lui	a5,0x40004
+  f8:	40c78793          	addi	a5,a5,1036 # 4000440c <reset_handler+0x400042dc>
+  fc:	00c00713          	li	a4,12
+ 100:	00e7a023          	sw	a4,0(a5)
+ 104:	400047b7          	lui	a5,0x40004
+ 108:	40c78793          	addi	a5,a5,1036 # 4000440c <reset_handler+0x400042dc>
+ 10c:	0007a683          	lw	a3,0(a5)
+ 110:	400047b7          	lui	a5,0x40004
+ 114:	40c78793          	addi	a5,a5,1036 # 4000440c <reset_handler+0x400042dc>
+ 118:	00002737          	lui	a4,0x2
+ 11c:	00e6e733          	or	a4,a3,a4
+ 120:	00e7a023          	sw	a4,0(a5)
+ 124:	00000513          	li	a0,0
+ 128:	ef1ff0ef          	jal	ra,18 <puts>
+ 12c:	0000006f          	j	12c <main+0xac>
+
+00000130 <reset_handler>:
+ 130:	ff010113          	addi	sp,sp,-16
+ 134:	00112623          	sw	ra,12(sp)
+ 138:	00812423          	sw	s0,8(sp)
+ 13c:	01010413          	addi	s0,sp,16
+ 140:	f41ff0ef          	jal	ra,80 <main>
+ 144:	00000013          	nop
+ 148:	00c12083          	lw	ra,12(sp)
+ 14c:	00812403          	lw	s0,8(sp)
+ 150:	01010113          	addi	sp,sp,16
+ 154:	00008067          	ret

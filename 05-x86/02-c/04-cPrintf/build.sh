@@ -1,0 +1,1 @@
+gcc mylib.c main.c
