@@ -1,5 +1,6 @@
 # ELF 目的檔
 
+* [Executable and Linkable Format 101 - Part 1 Sections and Segments](https://www.intezer.com/blog/research/executable-linkable-format-101-part1-sections-segments/)
 * [Linux CTF 逆向入門](https://kknews.cc/code/q4xmj6g.html)
 * [Linux工具快速教程](https://linuxtools-rst.readthedocs.io/zh_CN/latest/index.html)
     * [13. readelf elf文件格式分析](https://linuxtools-rst.readthedocs.io/zh_CN/latest/tool/readelf.html)

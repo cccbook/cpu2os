@@ -1,0 +1,3 @@
+# qwerty鍵盤
+
+* [qwerty鍵盤](https://www.facebook.com/ccckmit/posts/pfbid02VENz5ZyrM92mB15DvPa3pcc2F9n5cUKcqszQCMEE486Vwodfy71dKjVYHvHXqVZtl?__cft__[0]=AZUuCswZVMiuwkPWsqUUS-ZS__kuW9dlg494NsILbaunkw-6C390xByYJGpOxwyjSlxZFMDB_OmzGQs_9g86txvpkI3b5tV5bBTvhFggxGxE81-Nua8WCfvgxDKHROuRh67qKMBIbYM9d_wXSYuR2Q-W1fLsYoxsdA1yDQS3b7Cm0V06bNmAsAYkDjAZB-bUgQXjW7JOBJaahS9rTevM-H3B&__tn__=%2CO%2CP-R)
