@@ -2,6 +2,8 @@
 
 Chomsky Hierarchy 是一個用於描述語言文法的分類系統，由 Noam Chomsky 於1956年提出。它將所有文法分為四個層次，每個層次都有一組特定的產生規則和語言特徵。
 
+* https://en.wikipedia.org/wiki/Chomsky_hierarchy
+
 以下是 Chomsky Hierarchy 的四個層次：
 
 型 0 文法 (Unrestricted grammars)：最一般化的文法，沒有限制產生規則的形式。這種文法可以產生任何形式的語言，包括非正則語言。型 0 文法包含了所有的文法類型。
