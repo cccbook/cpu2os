@@ -70,13 +70,11 @@ void irDump() {
 }
 
 void irPass2() {
-  // printf("==========irPass2()============\n");
   for (int i=0; i<irTop; i++) {
     int label = ir[i].label, type = ir[i].type;
     if (type == IrLabel) {
       assert(label != 0);
       L[label] = i;
-      // printf("L%d=%d\n", label, L[label]);
     }
   }
 }

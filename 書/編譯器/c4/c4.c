@@ -5,7 +5,7 @@
 // just enough features to allow self-compilation and a bit more
 
 // Written by Robert Swierczek
-// 修改者: 陳鍾誠 (模組化並加上中文註解)
+// 修改者: 陳鍾誠 (模組化並加上中文註解，改叫 C5)
 
 #include <stdio.h>
 #include <stdlib.h>

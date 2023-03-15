@@ -1,6 +1,6 @@
-# C5 -- 500 行的 C 語言編譯器 (修改自 c4, 改叫 C5)
+# C4 -- 500 行的 C 語言編譯器 
 
-C in four functions
+C in four functions (陳鍾誠獨立出一個 vm 函數，於是變五個函數)
 
 * 修改者 -- 陳鍾誠
 * 作者 -- https://github.com/rswier/
@@ -11,16 +11,16 @@ C in four functions
 
 
 ```
-ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
-$ gcc -w c5.c -o c5
 
-ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
-$ ./c5 test/hello.c
+$ gcc -w c4.c -o c4
+
+
+$ ./c4 test/hello.c
 hello, world
 exit(0) cycle = 9
 
-ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
-$ ./c5 test/sum.c
+
+$ ./c4 test/sum.c
 sum(10)=55
 exit(0) cycle = 303
 ```
@@ -28,8 +28,8 @@ exit(0) cycle = 303
 ## 印出組合語言 (堆疊機)
 
 ```
-ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
-$ ./c5 -s test/sum.c
+
+$ ./c4 -s test/sum.c
 1: #include <stdio.h>
 2:
 3: // sum(n) = 1+2+...+n
@@ -107,14 +107,14 @@ $ ./c5 -s test/sum.c
 ## 自我編譯
 
 ```
-ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
-$ ./c5 c5.c test/sum.c
+
+$ ./c4 c4.c test/sum.c
 sum(10)=55
 exit(0) cycle = 303
 exit(0) cycle = 90964
 
-ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
-$ ./c5 c5.c c5.c test/sum.c
+
+$ ./c4 c4.c c4.c test/sum.c
 sum(10)=55
 exit(0) cycle = 303
 exit(0) cycle = 90964
@@ -124,8 +124,8 @@ exit(0) cycle = 17230772
 ## Linux 使用
 
 ```
-guest@localhost:~/sp2/project/c5$ gcc -m32 c4.c -o c4
-guest@localhost:~/sp2/project/c5$ ./c4 test/hello.c
+$ gcc -m32 c4.c -o c4
+$ ./c4 test/hello.c
 hello, world
 exit(0) cycle = 9
 ```

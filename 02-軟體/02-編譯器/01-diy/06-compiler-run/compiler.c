@@ -27,7 +27,6 @@ int isEnd() {
 }
 
 char *next() {
-  // printf("%02d:token = %-10s type = %-10s\n", tokenIdx, tokens[tokenIdx], typeName[types[tokenIdx]]);
   return tokens[tokenIdx++];
 }
 
@@ -74,8 +73,7 @@ int F() {
   } else { // Number | Id | CALL
     f = nextTemp();
     char *item = next();
-    irEmitAssignTs(f, item);
-    // emit("t%d = %s\n", f, item);
+    irEmitAssignTs(f, item); // t[i] = item
   }
   return f;
 }
@@ -87,8 +85,7 @@ int E() {
     char *op = next();
     int i2 = E();
     int i = nextTemp();
-    irEmitOp2(i, i1, op, i2);
-    // emit("t%d = t%d %s t%d\n", i, i1, op, i2);
+    irEmitOp2(i, i1, op, i2); // t[i] = t[i1] op t[i2]
     i1 = i;
   }
   return i1;
@@ -101,50 +98,34 @@ int EXP() {
 
 // ASSIGN = id '=' E
 void ASSIGN(char *id) {
-  // char *id = next();
   skip("=");
   int e = EXP();
-  irEmitAssignSt(id, e);
-  // emit("%s = t%d\n", id, e);
+  irEmitAssignSt(id, e); // t[i] = e
 }
 
 // while (E) STMT
 void WHILE() {
   int whileBegin = nextLabel();
   int whileEnd = nextLabel();
-  irEmitLabel(whileBegin);
-  // emit("(L%d)\n", whileBegin);
+  irEmitLabel(whileBegin); // label (L%d)
   skip("while");
   skip("(");
   int e = E();
-  irEmitIfNotGoto(e, whileEnd);
-  // emit("goif T%d L%d\n", whileEnd, e);
+  irEmitIfNotGoto(e, whileEnd); // goif T[e] L[whileEnd]
   skip(")");
   STMT();
-  irEmitGoto(whileBegin);
-  // emit("goto L%d\n", whileBegin);
-  irEmitLabel(whileEnd);
-  // emit("(L%d)\n", whileEnd);
+  irEmitGoto(whileBegin); // goto L[whileBegin]
+  irEmitLabel(whileEnd);  // goto L[whileEnd]
 }
 
 void STMT() {
   if (isNext("while"))
     WHILE();
-  // else if (isNext("if"))
-  //   IF();
+  // else if (isNext("if")) IF(); // 預留作為習題
   else if (isNext("{"))
     BLOCK();
   else {
     char *id = next();
-    /*
-    if (eq(id, "int")) {
-      skip("int");
-      while (!isNext(";")) {
-        char *var = skipType(Id);
-        mapAdd(symMap, var, &symList[symTop++]);
-      }
-    }
-    */
     if (isNext("(")) {
       CALL(id);
     } else {
@@ -172,7 +153,6 @@ void PROG() {
 }
 
 void parse() {
-  // printf("============ parse =============\n");
   tokenIdx = 0;
   PROG();
 }
