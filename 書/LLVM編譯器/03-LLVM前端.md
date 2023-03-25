@@ -1,5 +1,10 @@
 # 第三章：LLVM前端(front-end)
 
+範例 
+
+1. [My First Language Frontend with LLVM Tutorial](https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/index.html)
+2. https://github.com/igor84/summus
+
 ## 前端的基本功能和流程
 
 LLVM前端是LLVM編譯器的一個關鍵組件，其主要功能是將不同編程語言的源代碼轉換為LLVM IR中間表示形式。前端可以處理多種編程語言，例如C、C++、Objective-C、Swift、Java等等。

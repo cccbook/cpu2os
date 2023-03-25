@@ -1,5 +1,9 @@
 # 第五章：LLVM後端(back-end)
 
+實作
+
+1. https://llvm.org/docs/WritingAnLLVMBackend.html
+
 ## 後端的基本功能和流程
 
 LLVM後端的基本功能是將LLVM IR轉換為目標平台的機器碼。後端的流程通常分為三個主要步驟：選擇目標平台、選擇優化級別和生成機器碼。
