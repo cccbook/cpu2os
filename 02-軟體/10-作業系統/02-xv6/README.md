@@ -1,5 +1,7 @@
 [中文電子書 -- 從 RISC-V 處理器到 UNIX 作業系統](https://github.com/riscv2os/riscv2os/wiki)
 
+閱讀: [與作業系統的第一類接觸 : 探索 xv6](https://ithelp.ithome.com.tw/users/20138181/ironman/5395)
+
 # xv6-riscv
 
 本專案來源為 MIT 6.828 課程之 github ，網址如下：
