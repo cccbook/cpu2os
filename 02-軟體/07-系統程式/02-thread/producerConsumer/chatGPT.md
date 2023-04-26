@@ -161,3 +161,9 @@ void *consumer(void *arg) {
 ```
 
 上述程式碼中，我們在 producer() 和 consumer() 中使用了 pthread_cond_wait() 和 pthread_cond_signal()，來實現 condition variable。當 buffer 已滿時，生產者會等待消費者消費後再繼續生產，此時生產者會呼叫 pthread_cond_wait()，
+
+## ccc: 請問下列程式中的 pthread_cond_wait(&empty, &mutex); 是什麼用途
+
+在這段程式中，pthread_cond_wait(&empty, &mutex) 的用途是讓生產者在緩衝區滿時等待，直到消費者消費一部分產品後才繼續生產。這裡的 empty 是一個條件變數（condition variable），當緩衝區中有空位時會被通知，而 mutex 則是一個互斥鎖（mutex），用於保護對緩衝區的操作。
+
+在執行 pthread_cond_wait 時，會釋放 mutex，讓其他執行緒可以取得 mutex 並操作共享資源，同時讓這個執行緒進入等待狀態（blocked），直到被通知（signal）為止。當被通知時，這個執行緒會重新獲得 mutex，並檢查緩衝區是否有空位，如果有則繼續生產，否則繼續等待。透過條件變數的等待與通知機制，生產者可以避免在緩衝區已滿時一直進行忙等待，減少了無謂的 CPU 使用率。

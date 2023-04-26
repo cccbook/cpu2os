@@ -12,7 +12,7 @@
 #include <memory.h>
 #include <unistd.h>
 #include <fcntl.h>
-// #define int long long
+#define int long long
 
 char *p, *lp, // current position in source code (p: 目前原始碼指標, lp: 上一行原始碼指標)
      *data,*data0, // data/bss pointer (資料段機器碼指標)
@@ -489,7 +489,7 @@ int run(int *pc, int *bp, int *sp) { // 虛擬機 => pc: 程式計數器, sp: �
   }
 }
 
-int main(int argc, char *argv[]) // 主程式
+signed main(signed argc, char *argv[]) // 主程式
 {
   int fd, ty, poolsz, *idmain;
   int *pc, *bp, *sp;
