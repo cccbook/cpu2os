@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <arpa/inet.h>
-#include <time.h>
 #include <assert.h>
 #include <sys/wait.h>
 
