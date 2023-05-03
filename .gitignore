@@ -10,6 +10,7 @@
 !AUTHORS
 !TODO
 
+*.dSYM/
 # mini-riscv-os
 *.dsk
 
