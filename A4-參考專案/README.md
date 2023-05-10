@@ -12,6 +12,7 @@
 * [semu](riscv/semu) -- 虛擬機，可執行 xv6
     * [ccc 加註解後的原始碼版本](https://github.com/riscv2os/semu/blob/master/ccc/semu.c)
 * [TinyEMU](https://bellard.org/tinyemu/) -- 虛擬機 (Fabrice Bellard)
+    * https://github.com/fernandotcl/TinyEMU
 * [minilisp](https://github.com/rui314/minilisp) -- 解譯器
     * [ccc 加註解後的原始碼版本](https://github.com/ccc-c/minilisp/blob/master/ccc/minilisp.c)
 * [script1](https://github.com/script-one/script1) -- 類似編譯器
