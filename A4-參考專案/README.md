@@ -15,5 +15,6 @@
     * [ccc 加註解後的原始碼版本](https://github.com/ccc-c/minilisp/blob/master/ccc/minilisp.c)
 * [script1](https://github.com/script-one/script1) -- 類似編譯器
     * 但功能是將 script1 語言轉換成 js/python/dart，而非轉換成機器碼或組合語言
+    * 說明文件 -- https://github.com/script-one/script1/wiki
 
 
