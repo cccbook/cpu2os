@@ -21,7 +21,10 @@ int main(int argc, char *argv[]) {
     if (argc==1) { // server
         printf("I am server...\n");
         saddr.sin_addr.s_addr = INADDR_ANY;
-        bind(sfd, (struct sockaddr*) &saddr, sizeof(struct sockaddr));
+        if (bind(sfd, (struct sockaddr*) &saddr, sizeof(struct sockaddr))!=0) {
+            printf("error: bind fail! port %d occupied ...\n");
+            exit(1);
+        }
         socklen_t rAddrLen = sizeof(struct sockaddr);
         int rlen = recvfrom(sfd, msg, SMAX, 0, (struct sockaddr*) &raddr, &rAddrLen);
         printf("receive: %s from client addr %s\n", msg, inet_ntoa(raddr.sin_addr));
