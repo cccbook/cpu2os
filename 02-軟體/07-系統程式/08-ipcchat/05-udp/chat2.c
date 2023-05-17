@@ -16,13 +16,14 @@ int main(int argc, char *argv[]) {
     memset(&raddr, 0, sizeof(raddr));
     saddr.sin_family = AF_INET;
     int port = atoi(argv[1]);
+    printf("port=%d\n", port);
     saddr.sin_port = htons(port);
     char msg[SMAX];
-    if (argc==1) { // server
+    if (argc<=2) { // server
         printf("I am server...\n");
         saddr.sin_addr.s_addr = INADDR_ANY;
         if (bind(sfd, (struct sockaddr*) &saddr, sizeof(struct sockaddr))!=0) {
-            printf("error: bind fail! port %d occupied ...\n");
+            printf("error: bind fail! port %d occupied ...\n", port);
             exit(1);
         }
         socklen_t rAddrLen = sizeof(struct sockaddr);
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]) {
         printf("receive: %s from client addr %s\n", msg, inet_ntoa(raddr.sin_addr));
     } else { // client
         printf("I am client...\n");
-        saddr.sin_addr.s_addr = inet_addr(argv[1]);
+        saddr.sin_addr.s_addr = inet_addr(argv[2]);
         memcpy(&raddr, &saddr, sizeof(saddr));
         char *connMsg = "<connect request>";
         sendto(sfd, connMsg, strlen(connMsg)+1, 0, (struct sockaddr*) &saddr, sizeof(struct sockaddr));
