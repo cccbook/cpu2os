@@ -8,8 +8,8 @@
 ## blocking1.c
 
 ```
-mac020:A1-blocking mac020$ gcc blocking1.c -o blocking1
-mac020:A1-blocking mac020$ ./blocking1
+$ gcc blocking1.c -o blocking1
+$ ./blocking1
 hahaha
 buf is hahaha
 
@@ -34,8 +34,8 @@ test
 ## nonblocking1.c
 
 ```
-mac020:A1-blocking mac020$ gcc nonblocking1.c -o nonblocking1
-mac020:A1-blocking mac020$ ./nonblocking1
+$ gcc nonblocking1.c -o nonblocking1
+$ ./nonblocking1
 read /dev/tty: Resource temporarily unavailable
 no input,buf is null
 read /dev/tty: Resource temporarily unavailable

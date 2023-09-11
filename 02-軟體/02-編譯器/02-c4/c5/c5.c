@@ -12,7 +12,7 @@
 #include <memory.h>
 #include <unistd.h>
 #include <fcntl.h>
-#define int long long
+// #define int long long
 
 char *p, *lp, // current position in source code (p: 目前原始碼指標, lp: 上一行原始碼指標)
      *data,*data0, // data/bss pointer (資料段機器碼指標)
@@ -489,7 +489,7 @@ int run(int *pc, int *bp, int *sp) { // 虛擬機 => pc: 程式計數器, sp: �
   }
 }
 
-int main(int argc, char **argv) // 主程式
+int main(int argc, char *argv[]) // 主程式
 {
   int fd, ty, poolsz, *idmain;
   int *pc, *bp, *sp;
@@ -527,7 +527,7 @@ int main(int argc, char **argv) // 主程式
   p[i] = 0; // 設定程式 p 字串結束符號 \0
   close(fd);
 
-  if (prog() == -1) return -1;
+  if (prog() == -1) return -1; // 呼叫 prog() 開始編譯。
 
   if (!(pc = (int *)idmain[Val])) { printf("main() not defined\n"); return -1; }
   if (src) return 0;
@@ -539,5 +539,5 @@ int main(int argc, char **argv) // 主程式
   *--sp = argc;     // 把 argc,argv 放入堆疊，這樣 main(argc,argv) 才能取得到
   *--sp = (int)argv; 
   *--sp = (int)t;   // 推入返回點，於是最後 RET 時會跳回 t=sp 指定的位址，接著呼叫 EXIT 離開。
-  return run(pc, bp, sp);
+  return run(pc, bp, sp); // 用虛擬機執行中間碼
 }

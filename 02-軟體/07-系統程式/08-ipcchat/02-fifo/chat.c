@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     mkfifo(fifo1, 0666);
 
     char *me, *you;
-    if (strcmp(argv[1], "¡")) { // me:0 => you:1
+    if (strcmp(argv[1], "1")) { // me:0 => you:1
         me = fifo0;
         you = fifo1;
     } else { // me:1 => you:0

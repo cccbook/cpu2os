@@ -7,23 +7,20 @@ C in four functions
 * 來源 -- https://github.com/rswier/c4
 * 原理說明 -- [doc](doc)
 
-BUG: 改完後就不能 self compile 了 ....
-
 ## 使用方式
 
 
 ```
-PS D:\ccc\course\sp\code\c\08-compiler2\c4> gcc -w c4.c -o c4
+ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
+$ gcc -w c5.c -o c5
 
-PS D:\ccc\course\sp\code\c\08-compiler2\c4> ./c4 test/hello.c
+ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
+$ ./c5 test/hello.c
 hello, world
 exit(0) cycle = 9
 
-PS D:\ccc\course\sp\code\c\08-compiler2\c4> ./c4 test/fib.c  
-f(7)=13
-exit(8) cycle = 920
-
-PS D:\ccc\course\sp\code\c\08-compiler2\c4> ./c4 test/sum.c
+ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
+$ ./c5 test/sum.c
 sum(10)=55
 exit(0) cycle = 303
 ```
@@ -31,105 +28,97 @@ exit(0) cycle = 303
 ## 印出組合語言 (堆疊機)
 
 ```
-PS D:\ccc\course\sp\code\c\08-compiler2\c4> ./c4 -s test/sum.c
+ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
+$ ./c5 -s test/sum.c
 1: #include <stdio.h>
-2: 
+2:
 3: // sum(n) = 1+2+...+n
 4: int sum(int n) {
 5:   int s;
 6:   int i;
 7:   s=0;
-    ENT  2
-    LEA  -1
-    PSH 
-    IMM  0
-    SI
+ 4653208     ENT  2
+ 4653224     LEA  -1
+ 4653240     PSH
+ 4653248     IMM  0
+ 4653264     SI
 8:   i=1;
-    LEA  -2
-    PSH
-    IMM  1
-    SI
+ 4653272     LEA  -2
+ 4653288     PSH
+ 4653296     IMM  1
+ 4653312     SI
 9:   while (i <= n) {
-    LEA  -2
-    LI
-    PSH
-    LEA  2
-    LI
-    LE
-    BZ   0
+ 4653320     LEA  -2
+ 4653336     LI
+ 4653344     PSH
+ 4653352     LEA  2
+ 4653368     LI
+ 4653376     LE
+ 4653384     BZ   0
 10:     s = s + i;
-    LEA  -1
-    PSH
-    LEA  -1
-    LI
-    PSH 
-    LEA  -2
-    LI
-    ADD 
-    SI
+ 4653400     LEA  -1
+ 4653416     PSH
+ 4653424     LEA  -1
+ 4653440     LI
+ 4653448     PSH
+ 4653456     LEA  -2
+ 4653472     LI
+ 4653480     ADD
+ 4653488     SI
 11:     i ++;
-    LEA  -2
-    PSH
-    LI
-    PSH
-    IMM  1
-    ADD 
-    SI
-    PSH
-    IMM  1
-    SUB
+ 4653496     LEA  -2
+ 4653512     PSH
+ 4653520     LI
+ 4653528     PSH
+ 4653536     IMM  1
+ 4653552     ADD
+ 4653560     SI
+ 4653568     PSH
+ 4653576     IMM  1
+ 4653592     SUB
 12:   }
 13:   return s;
-    JMP  6684812
-    LEA  -1
-    LI
-    LEV
+ 4653600     JMP  4653320
+ 4653616     LEA  -1
+ 4653632     LI
+ 4653640     LEV
 14: }
-    LEV 
+ 4653648     LEV
 15:
 16: int main() {
 17:   printf("sum(10)=%d\n", sum(10));
-    ENT  0
-    IMM  6946904
-    PSH
-    IMM  10
-    PSH
-    JSR  6684756
-    ADJ  1
-    PSH
-    PRTF
-    ADJ  2
+ 4653656     ENT  0
+ 4653672     ADDR 4915360
+ 4653688     PSH
+ 4653696     IMM  10
+ 4653712     PSH
+ 4653720     JSR  4653208
+ 4653736     ADJ  1
+ 4653752     PSH
+ 4653760     PRTF
+ 4653768     ADJ  2
 18:   return 0;
-    IMM  0
-    LEV
+ 4653784     IMM  0
+ 4653800     LEV
 19: }
-    LEV
+ 4653808     LEV
 ```
 
 ## 自我編譯
 
 ```
-gcc -o c4 c4.c  (you may need the -m32 option on 64bit machines)
-./c4 test/hello.c
-./c4 -s test/hello.c
+ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
+$ ./c5 c5.c test/sum.c
+sum(10)=55
+exit(0) cycle = 303
+exit(0) cycle = 90964
 
-./c4 c4.c test/hello.c
-./c4 c4.c c4.c test/hello.c
-```
-
-執行結果
-
-```
-PS D:\ccc\course\sp\code\c\08-compiler2\c4> ./c4 c4.c test/hello.c
-hello, world
-exit(0) cycle = 9
-exit(0) cycle = 26036
-
-PS D:\ccc\course\sp\code\c\08-compiler2\c4> ./c4 c4.c c4.c test/hello.c
-hello, world
-exit(0) cycle = 9
-exit(0) cycle = 26036
-exit(0) cycle = 10271086
+ccckmit@asus MINGW64 /d/ccc/cpu2os/02-軟體/02-編譯器/02-c4/c5 (master)
+$ ./c5 c5.c c5.c test/sum.c
+sum(10)=55
+exit(0) cycle = 303
+exit(0) cycle = 90964
+exit(0) cycle = 17230772
 ```
 
 ## Linux 使用

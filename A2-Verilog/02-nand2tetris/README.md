@@ -1,16 +1,19 @@
-# nand2tetris_verilog
+# 
 
-rewrite my nand2tetris project (PartI - Hardware) into verilog
+```
+$ iverilog -o gate_test gate_test.v
 
-The hardware part of nand2tetris is to build the HackComputer (include HackCPU) from nand gate.
-
-Please refer to http://nand2tetris.org/ to more information.
-
-If you would like to know more about this verilog porting project, plase read the following articles of young maker magazine.
-
-* http://ccc.nqu.edu.tw/db/pmag201507/home.html
-
-
-
-
-
+$ vvp gate_test
+   0ns b=0 a=0 aNot=1 abNand=1 abAnd=0 abOr=0 abXor=0
+  50ns b=0 a=1 aNot=0 abNand=1 abAnd=0 abOr=1 abXor=1
+ 100ns b=1 a=0 aNot=1 abNand=1 abAnd=0 abOr=1 abXor=1
+ 150ns b=1 a=1 aNot=0 abNand=0 abAnd=1 abOr=1 abXor=0
+ 200ns b=0 a=0 aNot=1 abNand=1 abAnd=0 abOr=0 abXor=0
+ 250ns b=0 a=1 aNot=0 abNand=1 abAnd=0 abOr=1 abXor=1
+ 300ns b=1 a=0 aNot=1 abNand=1 abAnd=0 abOr=1 abXor=1
+ 350ns b=1 a=1 aNot=0 abNand=0 abAnd=1 abOr=1 abXor=0
+ 400ns b=0 a=0 aNot=1 abNand=1 abAnd=0 abOr=0 abXor=0
+ 450ns b=0 a=1 aNot=0 abNand=1 abAnd=0 abOr=1 abXor=1
+gate_test.v:28: $finish called at 500 (1s)
+ 500ns b=1 a=0 aNot=1 abNand=1 abAnd=0 abOr=1 abXor=1
+```

@@ -13,6 +13,8 @@ int main() {
   printf("n=%d\n", n);
   write(b, text, n);
   printf("a=%d, b=%d\n", a, b);
+  close(a);
+  close(b);
 }
 
 
