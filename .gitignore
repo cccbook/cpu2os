@@ -55,6 +55,7 @@ pgdata/
 .vscode
 
 *.exe
+*.obj
 *.exe.stackdump
 *.hack
 # *.bin
