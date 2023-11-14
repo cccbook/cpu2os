@@ -10,6 +10,11 @@
 !AUTHORS
 !TODO
 
+# zig
+
+zig-cache
+zig-out
+
 *.dSYM/
 # mini-riscv-os
 *.dsk

@@ -66,6 +66,11 @@ zig 似乎沒有官方的套件管理員，雖然官方似乎釋出了一個稱�
     * https://github.com/capy-ui/capy
     * https://github.com/capy-ui/zig-template
 
+## web
+
+* https://github.com/karlseguin/http.zig
+    * https://ziglang.org/documentation/master/std/#A;std:http
+
 ## database
 
 * https://github.com/vrischmann/zig-sqlite
