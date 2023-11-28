@@ -1,6 +1,5 @@
-GCC = gcc -std=c17
 db: db.c
-	$(GCC) db.c -o db
+	gcc -std=gnu11 db.c -o db
 
 run: db
 	./db mydb.db
