@@ -4,12 +4,11 @@
 ```
 $ ./build.sh
 
-ccckmit@asus MINGW64 /d/ccc/ccc112a/cpu2os/02-軟體/A1-資料庫/02-bptree (master)
 $ ./a
 [no.1   key = 10, value = 20]
 [no.2   key = 10, value = 21]
 Total number of answers is: 2
-bptQueryKey(3)=2
+bptQueryKey(10)=2
 [no.1   key = 10, value = 20]
 [no.2   key = 10, value = 21]
 [no.3   key = 11, value = 22]

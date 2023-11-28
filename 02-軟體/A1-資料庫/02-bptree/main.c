@@ -19,7 +19,7 @@ int main() {
         stp += strlen(stp)+1;
     }
     // printf("bptFind(3)=%d\n", bptFind(3));
-    printf("bptQueryKey(3)=%d\n", bptQueryKey(10));
+    printf("bptQueryKey(10)=%d\n", bptQueryKey(10));
     printf("bptQueryRange(10,20)=%d\n", bptQueryRange(10,20));
     bptDestroy();
 }
