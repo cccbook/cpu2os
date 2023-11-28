@@ -1,5 +1,12 @@
 # bpTree (B+ Tree)
 
+* 修改自 -- https://github.com/json-db/B-Plus-Tree
+
+## 參考
+
+* https://eatonphil.com/btrees.html
+
+## Run
 
 ```
 $ ./build.sh
