@@ -27,7 +27,7 @@ int *e, *le,  // current position in emitted code (e: 目前機器碼指標, le:
     line,     // current line number (目前行號)
     src,      // print source and assembly flag (印出原始碼)
     debug;    // print executed instructions (印出執行指令 -- 除錯模式)
-
+int *poolsz;
 // tokens and classes (operators last and in precedence order) (按優先權順序排列)
 enum { // token : 0-127 直接用該字母表達， 128 以後用代號。
   Num = 128, Fun, Sys, Glo, Loc, Id,
@@ -82,6 +82,7 @@ void next() // 詞彙解析 lexer
       id[Name] = (int)pp; // id.Name = ptr(變數名稱)
       id[Hash] = tk; // id.Hash = 雜湊值
       tk = id[Tk] = Id; // token = id.Tk = Id
+      // printf("%x=%.9s\n", id[Val], pp); // c6
       return;
     }
     else if (tk >= '0' && tk <= '9') { // 取得數字串
@@ -492,9 +493,21 @@ int run(int *pc, int *bp, int *sp) { // 虛擬機 => pc: 程式計數器, sp: �
   }
 }
 
+// id[Class] Num = 128, Fun, Sys, Glo, Loc, Id,
+void symDump() {
+  int *sid;
+  sid = sym;
+  while (sid - sym < poolsz) {
+    if (sid[Class]==Sys) printf("sys:val=%x\n", sid[Val]);
+    if (sid[Class]==Glo) printf("glo:val=%x\n", sid[Val]);
+    if (sid[Class]==Id) printf("id:val=%x\n", sid[Val]);
+    sid += Idsz;
+  }
+}
+
 int main(int argc, char **argv) // 主程式
 {
-  int fd, ty, poolsz, *idmain;
+  int fd, ty, *idmain;
   int *pc, *bp, *sp;
   int i, *t;
 
@@ -531,7 +544,7 @@ int main(int argc, char **argv) // 主程式
 
   if (!(pc = (int *)idmain[Val])) { printf("main() not defined\n"); return -1; }
   if (src) return 0;
-
+  // symDump();
   // setup stack
   bp = sp = (int *)((int)sp + poolsz);
   *--sp = EXIT; // call exit if main returns
