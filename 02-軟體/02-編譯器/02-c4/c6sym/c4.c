@@ -36,7 +36,7 @@ enum { // token : 0-127 直接用該字母表達， 128 以後用代號。
 };
 
 // opcodes (機器碼的 op)
-enum { LEA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,
+enum { LEA ,IMM ,STR, JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,
        OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,
        OPEN,READ,CLOS,PRTF,MALC,FREE,MSET,MCMP,EXIT };
 
@@ -53,7 +53,7 @@ void printId(char *p) {
 }
 
 void printOp(int op) {
-    printf("%.4s", &"LEA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,"
+    printf("%.4s", &"LEA ,IMM ,STR ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,"
                     "OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
                     "OPEN,READ,CLOS,PRTF,MALC,FREE,MSET,MCMP,EXIT,"[op * 5]);
 }
@@ -76,7 +76,7 @@ void symDump() {
 
 void next() // 詞彙解析 lexer
 {
-  char *pp;
+  char *pp; int op, arg;
 
   while (tk = *p) {
     ++p;
@@ -85,11 +85,15 @@ void next() // 詞彙解析 lexer
         printf("%d: %.*s", line, p - lp, lp); // 印出該行
         lp = p; // lp = p = 新一行的原始碼開頭
         while (le < e) { // 印出上一行的所有目的碼
-          printf("\t"); printOp(*++le);
-          // printf("%8.4s", &"LEA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,"
-          //                  "OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
-          //                  "OPEN,READ,CLOS,PRTF,MALC,FREE,MSET,MCMP,EXIT,"[*++le * 5]);
-          if (*le <= ADJ) printf(" %d\n", *++le); else printf("\n"); // LEA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ 有一個參數。
+          op = *++le;
+          printf("\t"); printOp(op);
+          if (op <= ADJ) {
+            arg = *++le;
+            printf(" %d", arg); 
+            if (op == STR) printf(" // string:%s\n",  (char*)arg);
+            printf("\n");
+          } else
+            printf("\n"); // LEA ,IMM ,STR ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ 有一個參數。
         }
       }
       ++line;
@@ -135,13 +139,17 @@ void next() // 詞彙解析 lexer
     else if (tk == '\'' || tk == '"') { // 字元或字串
       pp = data;
       while (*p != 0 && *p != tk) {
-        if ((ival = *p++) == '\\') {
+        ival = *p++;
+        if (ival == '\\') {
           if ((ival = *p++) == 'n') ival = '\n'; // 處理 \n 的特殊情況
         }
-        if (tk == '"') *data++ = ival; // 把字串塞到資料段裏
+        if (tk == '"') // 是字串 "..." ，非 '..'
+          *data++ = ival; // 把目前掃到的字塞到資料段裏
       }
       ++p;
       if (tk == '"') ival = (int)pp; else tk = Num; // (若是字串) ? (ival = 字串 (在資料段中的) 指標) : (字元值)
+      // 注意，字串不會保留 " 符號在 data 段中
+      // 問題：字串會塞結尾的 \0 進資料段嗎？在上述程式中沒有看到? (原本初始化就有設 0，而且 expr 函數中會對齊，所以不用塞)
       return;
     } // 以下為運算元 =+-!<>|&^%*[?~, ++, --, !=, <=, >=, ||, &&, ~  ;{}()],:
     else if (tk == '=') { if (*p == '=') { ++p; tk = Eq; } else tk = Assign; return; }
@@ -168,8 +176,8 @@ void expr(int lev) // 運算式 expression, 其中 lev 代表優先等級
   if (!tk) { printf("%d: unexpected eof in expression\n", line); exit(-1); } // EOF
   else if (tk == Num) { *++e = IMM; *++e = ival; next(); ty = INT; } // 數值
   else if (tk == '"') { // 字串
-    *++e = IMM; *++e = ival; next();
-    while (tk == '"') next();
+    *++e = STR; *++e = ival; next();
+    while (tk == '"') next(); // "..." "..." 處理連續字串 (中間沒有逗號的那種)
     data = (char *)((int)data + sizeof(int) & -sizeof(int)); ty = PTR; // 用 int 為大小對齊 ??
   }
   else if (tk == Sizeof) { // 處理 sizeof(type) ，其中 type 可能為 char, int 或 ptr
@@ -469,14 +477,16 @@ int run(int *pc, int *bp, int *sp) { // 虛擬機 => pc: 程式計數器, sp: �
   while (1) {
     i = *pc++; ++cycle;
     if (debug) {
-      printf("%d> %.4s", cycle,
-        &"LEA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,"
-         "OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
-         "OPEN,READ,CLOS,PRTF,MALC,FREE,MSET,MCMP,EXIT,"[i * 5]);
+      printf("%d>", cycle); printOp(i);
+      // printf("%d> %.4s", cycle,
+      //  &"LEA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,"
+      //   "OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
+      //   "OPEN,READ,CLOS,PRTF,MALC,FREE,MSET,MCMP,EXIT,"[i * 5]);
       if (i <= ADJ) printf(" %d\n", *pc); else printf("\n");
     }
     if      (i == LEA) a = (int)(bp + *pc++);                             // load local address 載入區域變數
     else if (i == IMM) a = *pc++;                                         // load global address or immediate 載入全域變數或立即值
+    else if (i == STR) a = *pc++;                                         // load string address
     else if (i == JMP) pc = (int *)*pc;                                   // jump               躍躍指令
     else if (i == JSR) { *--sp = (int)(pc + 1); pc = (int *)*pc; }        // jump to subroutine 跳到副程式
     else if (i == BZ)  pc = a ? pc + 1 : (int *)*pc;                      // branch if zero     if (a==0) goto m[pc]
