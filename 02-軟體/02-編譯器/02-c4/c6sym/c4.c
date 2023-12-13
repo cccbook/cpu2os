@@ -61,17 +61,21 @@ void printOp(int op) {
 
 int poolsz;
 
-// id[Class]: Num, Fun, Sys, Glo, Loc, Id,
 void symDump() {
-  int *sid, *symEnd;
+  int *sid, *symEnd, i;
   printf("============ symbol table ===================\n");
   sid = sym;
-  while (sid - sym < poolsz/sizeof(int)) {
-    if (sid[Class]==Sys) { printf("system:   "); printOp(sid[Val]);  printf("\n"); }
-    if (sid[Class]==Glo) { printf("global:   "); printId(sid[Name]); printf(" at data[%d]\n", (char*)sid[Val]-data); }
-    if (sid[Class]==Fun) { printf("function: "); printId(sid[Name]); printf("\n"); }
-    if (sid[Class]==Id)  { printf("id:       "); printId(sid[Name]); printf("\n"); }
-    sid = sid + Idsz;
+  i = 0;
+  while (sid[Tk]) {
+    if (sid[Class]==Loc)      { printf("%2d:loc:      ", i); printId(sid[Name]); printf("\n"); }
+    else if (sid[Class]==Num) { printf("%2d:num:      ", i); printId(sid[Name]); printf("\n"); }
+    else if (sid[Class]==Sys) { printf("%2d:system:   ", i); printId(sid[Name]); printf("\n"); }
+    else if (sid[Class]==Glo) { printf("%2d:global:   ", i); printId(sid[Name]); printf(" at data[%d]\n", (char*)sid[Val]-data); }
+    else if (sid[Class]==Fun) { printf("%2d:function: ", i); printId(sid[Name]); printf("\n"); }
+    else if (sid[Class]==Id)  { printf("%2d:id:       ", i); printId(sid[Name]); printf("\n"); }
+    else                      { printf("%2d:keyword:  ", i); printId(sid[Name]); printf("\n"); }
+    sid = sid + Idsz; 
+    i ++;
   }
 }
 
@@ -106,17 +110,18 @@ void next() // 詞彙解析 lexer
     else if ((tk >= 'a' && tk <= 'z') || (tk >= 'A' && tk <= 'Z') || tk == '_') { // 取得變數名稱
       pp = p - 1;
       while ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || (*p >= '0' && *p <= '9') || *p == '_')
-        tk = tk * 147 + *p++;  // 計算雜湊值
-      tk = (tk << 6) + (p - pp); // 符號表的雜湊位址 ??
-      id = sym;
-      while (id[Tk]) { // 檢查是否碰撞 ?
-        if (tk == id[Hash] && !memcmp((char *)id[Name], pp, p - pp)) { tk = id[Tk]; return; } // 沒碰撞就傳回 token
-        id = id + Idsz; // 碰撞，前進到下一格。
+        tk = tk * 147 + *p++;  
+      tk = (tk << 6) + (p - pp); // 最後的雜湊值 tk
+      id = sym; // 從 sym 表頭開始
+      while (id[Tk]) { // 找到 hash 為 tk 的那個
+        if (tk == id[Hash] && !memcmp((char *)id[Name], pp, p - pp)) { tk = id[Tk]; return; } // 有找到，變數出現過，找到該 id 了
+        id = id + Idsz; // 前進到下一格
       }
+      // 否則為新 id，設定該 id 的表格內容。
       id[Name] = (int)pp; // id.Name = ptr(變數名稱)
-      id[Hash] = tk; // id.Hash = 雜湊值
-      tk = id[Tk] = Id; // token = id.Tk = Id
-      return;
+      id[Hash] = tk;      // id.Hash = 雜湊值
+      tk = id[Tk] = Id;   // token = id.Tk = Id
+      return; // 傳回 id
     }
     else if (tk >= '0' && tk <= '9') { // 取得數字串
       if (ival = tk - '0') { while (*p >= '0' && *p <= '9') ival = ival * 10 + *p++ - '0'; } // 十進位
