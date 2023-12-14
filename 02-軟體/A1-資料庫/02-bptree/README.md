@@ -40,3 +40,8 @@ Total number of answers is: 22
 bptQueryRange(10,20)=22
 Now destroying B+tree ..
 ```
+
+## 參考
+
+* [B-tree詳解及實現(C語言)](https://www.twblogs.net/a/5b8e068c2b7177188342564d)
+* https://www.programiz.com/dsa/b-tree
