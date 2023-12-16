@@ -60,14 +60,10 @@ void printOp(int op) {
 }
 
 void printTk(int tk) {
-  int *sid;
+  printf("tk=%3d ", tk);
   if (tk < 128) { printf("%c", (char) tk); return; } // 單一字元 token
-  sid = sym; // symbol token
-  while (sid[Tk]) {
-    if (sid[Tk] == Id) { printf("Id:%d ", tk); printId(sid[Name]); return; }
-    else { printf("Keyword:%d ", tk); printId(sid[Name]); return; }
-    sid = sid + Idsz;
-  }
+  if (tk == Id) { printId(id[Name]); return; }
+  if (tk > Char && tk < While) { printId(id[Name]); return; }
 }
 
 int poolsz;
@@ -80,7 +76,7 @@ void symDump() {
   while (sid[Tk]) {
     if (sid[Class]==Loc)      { printf("%2d:loc:      ", i); printId(sid[Name]); printf("\n"); }
     else if (sid[Class]==Num) { printf("%2d:num:      ", i); printId(sid[Name]); printf("\n"); }
-    else if (sid[Class]==Sys) { printf("%2d:system:   ", i); printId(sid[Name]); printf("\n"); }
+    else if (sid[Class]==Sys) { printf("%2d:system:   tk=%2d val=%2d ", i, sid[Tk], sid[Val]); printId(sid[Name]); printf("\n"); }
     else if (sid[Class]==Glo) { printf("%2d:global:   ", i); printId(sid[Name]); printf(" at data[%d]\n", (char*)sid[Val]-data); }
     else if (sid[Class]==Fun) { printf("%2d:function: ", i); printId(sid[Name]); printf("\n"); }
     else if (sid[Class]==Id)  { printf("%2d:id:       tk=%2d ", i, sid[Tk]); printId(sid[Name]); printf("\n"); }
@@ -230,6 +226,7 @@ int main(int argc, char **argv) // 主程式
   i = OPEN; while (i <= EXIT) { next(); id[Class] = Sys; id[Type] = INT; id[Val] = i++; } // add library to symbol table
   next(); id[Tk] = Char; // handle void type
 
+  p=lp;
   lex();
   symDump();
   return;
