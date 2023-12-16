@@ -81,28 +81,87 @@ int run(int *pc, int *bp, int *sp) { // 虛擬機 => pc: 程式計數器, sp: �
   }
 }
 
+#define E1(op) *e++ = op
+#define E2(op, arg) *e++ = op; *e++ = arg
 int main(int argc, char **argv) // 主程式
 {
-  int *pc, *bp, *sp, poolsz, t;
+  int *pc, *bp, *sp, poolsz, t, *fib, *loc;
 
   poolsz = 256*1024; // arbitrary size
   if (!(e = malloc(poolsz))) { printf("could not malloc(%d) text area\n", poolsz); return -1; } // 程式段
   if (!(sp = malloc(poolsz))) { printf("could not malloc(%d) stack area\n", poolsz); return -1; }  // 堆疊段
 
-  memset(e,    0, poolsz);
+  memset(e, 0, poolsz);
 
-  pc = e+1;
-// 1: int main()
-// 2: {
-// 3:   printf("hello, world\n");
-  *++e = ENT; *++e = 0;
-  *++e = IMM; *++e = "hello, world\n";
-  *++e = PSH;
-  *++e = PRTF;
-  *++e = ADJ; *++e = 1;
-// 4:   exit();
-  *++e = EXIT;
-// 5: }
-  bp = sp = (int *)((int)sp + poolsz); // setup stack
+// 3: int f(int n) {
+// 4:   if (n<=0) return 0;
+  fib = e;
+  E2(ENT, 0);
+  E2(LLA, 2);
+  E1(LI);
+  E1(PSH);
+  E2(IMM, 0);
+  E1(LE);
+  E2(BZ, 0); loc=e-1;
+  E2(IMM, 0);
+  E1(LEV);
+// 5:   if (n==1) return 1;
+  *loc = e;
+  E2(LLA, 2);
+  E1(LI);
+  E1(PSH);
+  E2(IMM, 1);
+  E1(EQ);
+  E2(BZ, 0); loc=e-1;
+  E2(IMM,1);
+  E1(LEV);
+// 6:   return f(n-1) + f(n-2);
+  *loc = e; 
+  E2(LLA, 2);
+  E1(LI);
+  E1(PSH);
+  E2(IMM, 1);
+  E1(SUB);
+  E1(PSH);
+  E2(JSR, fib);
+  E2(ADJ, 1);
+  E1(PSH);
+  E2(LLA, 2);
+  E1(LI);
+  E1(PSH);
+  E2(IMM,2);
+  E1(SUB);
+  E1(PSH);
+  E2(JSR, fib);
+  E2(ADJ, 1);
+  E1(ADD);
+  E1(LEV);
+// 7: }
+//    LEV
+  E1(LEV);
+// 8:
+// 9: int main() {
+// 10:   printf("f(7)=%d\n", f(7));
+  pc = e;
+  E2(ENT, 0);
+  E2(IMM, "f(7)=%d\n");
+  E1(PSH);
+  E2(IMM, 7);
+  E1(PSH);
+  E2(JSR, fib);
+  E2(ADJ, 1);
+  E1(PSH);
+  E1(PRTF);
+  E2(ADJ,2);
+// 11: }
+  E1(LEV);
+
+  // setup stack
+  bp = sp = (int *)((int)sp + poolsz);
+  *--sp = EXIT; // call exit if main returns
+  *--sp = PSH; t = sp;
+  *--sp = argc;
+  *--sp = (int)argv;
+  *--sp = (int)t;
   return run(pc, bp, sp);
 }

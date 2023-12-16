@@ -15,7 +15,7 @@
 #define int long long // 64 bit 電腦
 
 char *p, *lp, // current position in source code (p: 目前原始碼指標, lp: 上一行原始碼指標)
-     *data, *datap; // datap/bss pointer (資料段機器碼指標，包含《字串常數+全域變數空間》)。
+     *data;   // data/bss pointer (資料段機器碼指標)
 
 int *e, *le,  // current position in emitted code (e: 目前機器碼指標, le: 上一行機器碼指標)
     *id,      // currently parsed identifier (id: 目前的 id)
@@ -25,7 +25,6 @@ int *e, *le,  // current position in emitted code (e: 目前機器碼指標, le:
     ty,       // current expression type (目前的運算式型態)
     loc,      // local variable offset (區域變數的位移)
     line,     // current line number (目前行號)
-    table,    // print table (印出符號表，字串表)
     src,      // print source and assembly flag (印出原始碼)
     debug;    // print executed instructions (印出執行指令 -- 除錯模式)
 
@@ -37,7 +36,7 @@ enum { // token : 0-127 直接用該字母表達， 128 以後用代號。
 };
 
 // opcodes (機器碼的 op)
-enum { LLA, IMM ,STR ,LGA ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,
+enum { LLA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,
        OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,
        OPEN,READ,CLOS,PRTF,MALC,FREE,MSET,MCMP,EXIT };
 
@@ -48,50 +47,9 @@ enum { CHAR, INT, PTR };
 // identifier offsets (since we can't create an ident struct)
 enum { Tk, Hash, Name, Class, Type, Val, HClass, HType, HVal, Idsz }; // HClass, HType, HVal 是暫存的備份 ???
 
-void printId(char *p) {
-  while ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || (*p >= '0' && *p <= '9') || *p == '_')
-    printf("%c", *p++);
-}
-
-void printOp(int op) {
-    printf("%.4s", &"LLA ,IMM ,STR ,LGA ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,"
-                    "OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
-                    "OPEN,READ,CLOS,PRTF,MALC,FREE,MSET,MCMP,EXIT,"[op * 5]);
-}
-
-void printTk(int tk) {
-  int *sid, *symEnd, i;
-  if (tk < 128) { printf("%c", (char) tk); return; } // 單一字元 token
-  sid = sym; // symbol token
-  while (sid[Tk]) {
-    if (sid[Tk] == tk) printId(sid[Name]);
-    sid = sid + Idsz; 
-  }
-}
-
-int poolsz;
-
-void symDump() {
-  int *sid, *symEnd, i;
-  printf("============ symbol table ===================\n");
-  sid = sym;
-  i = 0;
-  while (sid[Tk]) {
-    if (sid[Class]==Loc)      { printf("%2d:loc:      ", i); printId(sid[Name]); printf("\n"); }
-    else if (sid[Class]==Num) { printf("%2d:num:      ", i); printId(sid[Name]); printf("\n"); }
-    else if (sid[Class]==Sys) { printf("%2d:system:   ", i); printId(sid[Name]); printf("\n"); }
-    else if (sid[Class]==Glo) { printf("%2d:global:   ", i); printId(sid[Name]); printf(" at data[%d]\n", (char*)sid[Val]-data); }
-    else if (sid[Class]==Fun) { printf("%2d:function: ", i); printId(sid[Name]); printf("\n"); }
-    else if (sid[Class]==Id)  { printf("%2d:id:       ", i); printId(sid[Name]); printf("\n"); }
-    else                      { printf("%2d:keyword:  ", i); printId(sid[Name]); printf("\n"); }
-    sid = sid + Idsz; 
-    i ++;
-  }
-}
-
 void next() // 詞彙解析 lexer
 {
-  char *pp; int op, arg;
+  char *pp;
 
   while (tk = *p) {
     ++p;
@@ -100,16 +58,10 @@ void next() // 詞彙解析 lexer
         printf("%d: %.*s", line, p - lp, lp); // 印出該行
         lp = p; // lp = p = 新一行的原始碼開頭
         while (le < e) { // 印出上一行的所有目的碼
-          op = *++le;
-          printf("\t"); printOp(op);
-          if (op <= ADJ) {
-            arg = *++le;
-            printf(" %d", arg); 
-            if (op == STR) printf(" // string:%d\n", (char*)arg-data);
-            if (op == LGA) printf(" // gvar:%d\n",  (char*)arg-data);
-            printf("\n");
-          } else
-            printf("\n"); // LLA ,IMM ,STR ,LGA,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ 有一個參數。
+          printf("%8.4s", &"LLA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,"
+                           "OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
+                           "OPEN,READ,CLOS,PRTF,MALC,FREE,MSET,MCMP,EXIT,"[*++le * 5]);
+          if (*le <= ADJ) printf(" %d\n", *++le); else printf("\n"); // LLA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ 有一個參數。
         }
       }
       ++line;
@@ -120,18 +72,17 @@ void next() // 詞彙解析 lexer
     else if ((tk >= 'a' && tk <= 'z') || (tk >= 'A' && tk <= 'Z') || tk == '_') { // 取得變數名稱
       pp = p - 1;
       while ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || (*p >= '0' && *p <= '9') || *p == '_')
-        tk = tk * 147 + *p++;  
-      tk = (tk << 7) + (p - pp); // 最後的雜湊值 tk; 原本是 << 6 ; 2^6=64 沒超過 128，怕會和 ASCII 衝碼
-      id = sym; // 從 sym 表頭開始
-      while (id[Tk]) { // 找到 hash 為 tk 的那個
-        if (tk == id[Hash] && !memcmp((char *)id[Name], pp, p - pp)) { tk = id[Tk]; return; } // 有找到，變數出現過，找到該 id 了
-        id = id + Idsz; // 前進到下一格
+        tk = tk * 147 + *p++;  // 計算雜湊值
+      tk = (tk << 6) + (p - pp); // 符號表的雜湊位址 ??
+      id = sym;
+      while (id[Tk]) { // 檢查是否碰撞 ?
+        if (tk == id[Hash] && !memcmp((char *)id[Name], pp, p - pp)) { tk = id[Tk]; return; } // 沒碰撞就傳回 token
+        id = id + Idsz; // 碰撞，前進到下一格。
       }
-      // 否則為新 id，設定該 id 的表格內容。
       id[Name] = (int)pp; // id.Name = ptr(變數名稱)
-      id[Hash] = tk;      // id.Hash = 雜湊值
-      tk = id[Tk] = Id;   // token = id.Tk = Id
-      return; // 將 id 交給 parser 處理。
+      id[Hash] = tk; // id.Hash = 雜湊值
+      tk = id[Tk] = Id; // token = id.Tk = Id
+      return;
     }
     else if (tk >= '0' && tk <= '9') { // 取得數字串
       if (ival = tk - '0') { while (*p >= '0' && *p <= '9') ival = ival * 10 + *p++ - '0'; } // 十進位
@@ -154,19 +105,15 @@ void next() // 詞彙解析 lexer
       }
     }
     else if (tk == '\'' || tk == '"') { // 字元或字串
-      pp = datap;
+      pp = data;
       while (*p != 0 && *p != tk) {
-        ival = *p++;
-        if (ival == '\\') {
+        if ((ival = *p++) == '\\') {
           if ((ival = *p++) == 'n') ival = '\n'; // 處理 \n 的特殊情況
         }
-        if (tk == '"') // 是字串 "..." ，非 '..'
-          *datap++ = ival; // 把目前掃到的字塞到資料段裏
+        if (tk == '"') *data++ = ival; // 把字串塞到資料段裏
       }
       ++p;
       if (tk == '"') ival = (int)pp; else tk = Num; // (若是字串) ? (ival = 字串 (在資料段中的) 指標) : (字元值)
-      // 注意，字串不會保留 " 符號在 datap 段中
-      // 問題：字串會塞結尾的 \0 進資料段嗎？在上述程式中沒有看到? (原本初始化就有設 0，而且 expr 函數中會對齊，所以不用塞)
       return;
     } // 以下為運算元 =+-!<>|&^%*[?~, ++, --, !=, <=, >=, ||, &&, ~  ;{}()],:
     else if (tk == '=') { if (*p == '=') { ++p; tk = Eq; } else tk = Assign; return; }
@@ -193,17 +140,9 @@ void expr(int lev) // 運算式 expression, 其中 lev 代表優先等級
   if (!tk) { printf("%d: unexpected eof in expression\n", line); exit(-1); } // EOF
   else if (tk == Num) { *++e = IMM; *++e = ival; next(); ty = INT; } // 數值
   else if (tk == '"') { // 字串
-    *++e = STR; *++e = ival; next();
-    while (tk == '"') next(); // "..." "..." 處理連續字串 (中間沒有逗號的那種)
-    datap = (char *)((int)datap + sizeof(int) & -sizeof(int)); ty = PTR; // 用 int 為大小對齊 ??
-  }
-  else if (tk == Sizeof) { // 處理 sizeof(type) ，其中 type 可能為 char, int 或 ptr
-    next(); if (tk == '(') next(); else { printf("%d: open paren expected in sizeof\n", line); exit(-1); }
-    ty = INT; if (tk == Int) next(); else if (tk == Char) { next(); ty = CHAR; }
-    while (tk == Mul) { next(); ty = ty + PTR; }
-    if (tk == ')') next(); else { printf("%d: close paren expected in sizeof\n", line); exit(-1); }
-    *++e = IMM; *++e = (ty == CHAR) ? sizeof(char) : sizeof(int);
-    ty = INT;
+    *++e = IMM; *++e = ival; next();
+    while (tk == '"') next();
+    data = (char *)((int)data + sizeof(int) & -sizeof(int)); ty = PTR; // 用 int 為大小對齊 ??
   }
   else if (tk == Id) { // 處理 id ...
     d = id; next();
@@ -222,7 +161,7 @@ void expr(int lev) // 運算式 expression, 其中 lev 代表優先等級
     else if (d[Class] == Num) { *++e = IMM; *++e = d[Val]; ty = INT; } // 該 id 是數值
     else {
       if (d[Class] == Loc) { *++e = LLA; *++e = loc - d[Val]; } // 該 id 是區域變數，載入區域變數 (LLA : load local address)
-      else if (d[Class] == Glo) { *++e = LGA; *++e = d[Val]; }  // 該 id 是全域變數，載入該全域變數 (IMM : load global address or immediate 載入全域變數或立即值)
+      else if (d[Class] == Glo) { *++e = IMM; *++e = d[Val]; }  // 該 id 是全域變數，載入該全域變數 (IMM : load global address or immediate 載入全域變數或立即值)
       else { printf("%d: undefined variable\n", line); exit(-1); }
       *++e = ((ty = d[Type]) == CHAR) ? LC : LI; // LI  : load int, LC  : load char
     }
@@ -240,24 +179,6 @@ void expr(int lev) // 運算式 expression, 其中 lev 代表優先等級
       expr(Assign); // 處理 (E) 中的 E      (E 運算式必須能處理 (t=x) op y 的情況，所以用 expr(Assign))
       if (tk == ')') next(); else { printf("%d: close paren expected\n", line); exit(-1); }
     }
-  }
-  else if (tk == Mul) { // * 乘法
-    next(); expr(Inc);
-    if (ty > INT) ty = ty - PTR; else { printf("%d: bad dereference\n", line); exit(-1); }
-    *++e = (ty == CHAR) ? LC : LI;
-  }
-  else if (tk == And) { // & AND
-    next(); expr(Inc);
-    if (*e == LC || *e == LI) --e; else { printf("%d: bad address-of\n", line); exit(-1); }
-    ty = ty + PTR;
-  }
-  else if (tk == '!') { next(); expr(Inc); *++e = PSH; *++e = IMM; *++e = 0; *++e = EQ; ty = INT; } // NOT
-  else if (tk == '~') { next(); expr(Inc); *++e = PSH; *++e = IMM; *++e = -1; *++e = XOR; ty = INT; } // Logical NOT
-  else if (tk == Add) { next(); expr(Inc); ty = INT; }
-  else if (tk == Sub) {
-    next(); *++e = IMM;
-    if (tk == Num) { *++e = -ival; next(); } else { *++e = -1; *++e = PSH; expr(Inc); *++e = MUL; } // -Num or -E
-    ty = INT;
   }
   else if (tk == Inc || tk == Dec) { // ++ or --
     t = tk; next(); expr(Inc);
@@ -289,17 +210,12 @@ void expr(int lev) // 運算式 expression, 其中 lev 代表優先等級
     }
     else if (tk == Lor) { next(); *++e = BNZ; d = ++e; expr(Lan); *d = (int)(e + 1); ty = INT; }
     else if (tk == Lan) { next(); *++e = BZ;  d = ++e; expr(Or);  *d = (int)(e + 1); ty = INT; }
-    else if (tk == Or)  { next(); *++e = PSH; expr(Xor); *++e = OR;  ty = INT; }
-    else if (tk == Xor) { next(); *++e = PSH; expr(And); *++e = XOR; ty = INT; }
-    else if (tk == And) { next(); *++e = PSH; expr(Eq);  *++e = AND; ty = INT; }
     else if (tk == Eq)  { next(); *++e = PSH; expr(Lt);  *++e = EQ;  ty = INT; }
     else if (tk == Ne)  { next(); *++e = PSH; expr(Lt);  *++e = NE;  ty = INT; }
     else if (tk == Lt)  { next(); *++e = PSH; expr(Shl); *++e = LT;  ty = INT; }
     else if (tk == Gt)  { next(); *++e = PSH; expr(Shl); *++e = GT;  ty = INT; }
     else if (tk == Le)  { next(); *++e = PSH; expr(Shl); *++e = LE;  ty = INT; }
     else if (tk == Ge)  { next(); *++e = PSH; expr(Shl); *++e = GE;  ty = INT; }
-    else if (tk == Shl) { next(); *++e = PSH; expr(Add); *++e = SHL; ty = INT; }
-    else if (tk == Shr) { next(); *++e = PSH; expr(Add); *++e = SHR; ty = INT; }
     else if (tk == Add) {
       next(); *++e = PSH; expr(Mul);
       if ((ty = t) > PTR) { *++e = PSH; *++e = IMM; *++e = sizeof(int); *++e = MUL;  }
@@ -324,14 +240,6 @@ void expr(int lev) // 運算式 expression, 其中 lev 代表優先等級
       *++e = PSH; *++e = IMM; *++e = (ty > PTR) ? sizeof(int) : sizeof(char);
       *++e = (tk == Inc) ? SUB : ADD;
       next();
-    }
-    else if (tk == Brak) {
-      next(); *++e = PSH; expr(Assign);
-      if (tk == ']') next(); else { printf("%d: close bracket expected\n", line); exit(-1); }
-      if (t > PTR) { *++e = PSH; *++e = IMM; *++e = sizeof(int); *++e = MUL;  }
-      else if (t < PTR) { printf("%d: pointer type expected\n", line); exit(-1); }
-      *++e = ADD;
-      *++e = ((ty = t - PTR) == CHAR) ? LC : LI;
     }
     else { printf("%d: compiler error tk=%d\n", line, tk); exit(-1); }
   }
@@ -476,8 +384,8 @@ int prog() { // 編譯整個程式 Program
       }
       else {
         id[Class] = Glo;
-        id[Val] = (int)datap;
-        datap = datap + sizeof(int); // 保留全域變數空間。
+        id[Val] = (int)data;
+        data = data + sizeof(int);
       }
       if (tk == ',') next();
     }
@@ -494,13 +402,14 @@ int run(int *pc, int *bp, int *sp) { // 虛擬機 => pc: 程式計數器, sp: �
   while (1) {
     i = *pc++; ++cycle;
     if (debug) {
-      printf("%d>", cycle); printOp(i);
+      printf("%d> %.4s", cycle,
+        &"LLA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,"
+         "OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
+         "OPEN,READ,CLOS,PRTF,MALC,FREE,MSET,MCMP,EXIT,"[i * 5]);
       if (i <= ADJ) printf(" %d\n", *pc); else printf("\n");
     }
     if      (i == LLA) a = (int)(bp + *pc++);                             // load local address 載入區域變數
-    else if (i == IMM) a = *pc++;                                         // load immediate 載入立即值
-    else if (i == STR) a = *pc++;                                         // load string address
-    else if (i == LGA) a = *pc++;                                         // load global address 載入全域變數或
+    else if (i == IMM) a = *pc++;                                         // load global address or immediate 載入全域變數或立即值
     else if (i == JMP) pc = (int *)*pc;                                   // jump               躍躍指令
     else if (i == JSR) { *--sp = (int)(pc + 1); pc = (int *)*pc; }        // jump to subroutine 跳到副程式
     else if (i == BZ)  pc = a ? pc + 1 : (int *)*pc;                      // branch if zero     if (a==0) goto m[pc]
@@ -544,30 +453,28 @@ int run(int *pc, int *bp, int *sp) { // 虛擬機 => pc: 程式計數器, sp: �
   }
 }
 
-
 int main(int argc, char **argv) // 主程式
 {
-  int fd, ty, *idmain;
+  int fd, ty, poolsz, *idmain;
   int *pc, *bp, *sp;
   int i, *t;
 
   --argc; ++argv;
   if (argc > 0 && **argv == '-' && (*argv)[1] == 's') { src = 1; --argc; ++argv; }
   if (argc > 0 && **argv == '-' && (*argv)[1] == 'd') { debug = 1; --argc; ++argv; }
-  if (argc > 0 && **argv == '-' && (*argv)[1] == 't') { table = 1; --argc; ++argv; }
-  if (argc < 1) { printf("usage: c4 [-s] [-d] [-t] file ...\n"); return -1; }
+  if (argc < 1) { printf("usage: c4 [-s] [-d] file ...\n"); return -1; }
 
   if ((fd = open(*argv, 0)) < 0) { printf("could not open(%s)\n", *argv); return -1; }
 
   poolsz = 256*1024; // arbitrary size
   if (!(sym = malloc(poolsz))) { printf("could not malloc(%d) symbol area\n", poolsz); return -1; } // 符號段
   if (!(le = e = malloc(poolsz))) { printf("could not malloc(%d) text area\n", poolsz); return -1; } // 程式段
-  if (!(data = datap = malloc(poolsz))) { printf("could not malloc(%d) datap area\n", poolsz); return -1; } // 資料段
+  if (!(data = malloc(poolsz))) { printf("could not malloc(%d) data area\n", poolsz); return -1; } // 資料段
   if (!(sp = malloc(poolsz))) { printf("could not malloc(%d) stack area\n", poolsz); return -1; }  // 堆疊段
 
   memset(sym,  0, poolsz);
   memset(e,    0, poolsz);
-  memset(datap, 0, poolsz);
+  memset(data, 0, poolsz);
 
   p = "char else enum if int return sizeof while "
       "open read close printf malloc free memset memcmp exit void main";
@@ -583,10 +490,9 @@ int main(int argc, char **argv) // 主程式
 
   if (prog() == -1) return -1;
 
-  if (table) symDump(); // c6
-
   if (!(pc = (int *)idmain[Val])) { printf("main() not defined\n"); return -1; }
   if (src) return 0;
+
   // setup stack
   bp = sp = (int *)((int)sp + poolsz);
   *--sp = EXIT; // call exit if main returns

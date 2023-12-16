@@ -11,5 +11,5 @@ $ ./test.sh
 hello, world
 5> ADJ  1
 6> EXIT
-exit(4915344) cycle = 6
+exit(6881424) cycle = 6
 ```
