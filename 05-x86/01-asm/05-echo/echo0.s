@@ -1,7 +1,13 @@
-main:
-        push    %rbx
+# -----------------------------------------------------------------------------
+# A 64-bit program that displays its commandline arguments, one per line.
+#
+# On entry, %rdi will contain argc and %rsi will contain argv.
+# -----------------------------------------------------------------------------
 
-loop:
+        .global main
+
+        .text
+main:
         push    %rdi                    # save registers that puts uses
         push    %rsi
         sub     $8, %rsp                # must align stack before call
@@ -15,7 +21,8 @@ loop:
 
         add     $8, %rsi                # point to next argument
         dec     %rdi                    # count down
-        jnz     loop                    # if not done counting keep going
+        jnz     main                    # if not done counting keep going
 
-        pop     %rbx
         ret
+format:
+        .asciz  "%s\n"
