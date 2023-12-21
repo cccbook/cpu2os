@@ -20,7 +20,7 @@ reg signed [3:0] b;
 wire signed [3:0] sum;
 wire c_out;
 
-cladder4 DUT (sum, cout, pg, gg, a, b, 0);
+cladder4 DUT (sum, cout, pg, gg, a, b, 1'b0);
 
 initial
 begin
