@@ -1,3 +1,12 @@
+# -----------------------------------------------------------------------------
+# A 64-bit program that displays its commandline arguments, one per line.
+#
+# On entry, %rdi will contain argc and %rsi will contain argv.
+# -----------------------------------------------------------------------------
+
+        .global main
+
+        .text
 main:
         push    %rbx
 
@@ -19,3 +28,5 @@ loop:
 
         pop     %rbx
         ret
+
+
