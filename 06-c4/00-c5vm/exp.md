@@ -15,8 +15,8 @@ $ ./c4 -s test/exp.c
     IMM  3   // a = 3
     PSH      // PUSH a (3)
     IMM  5   // a = 5
-    ADD      // a = a + 3
-    SI       // &x = a, POP
+    ADD      // a = a + 3 // a = *sp++ +  a;
+    SI       // x = a, POP ; // (*(int *)*sp++) = a;
 4:     y = x+4;
     LLA  -2
     PSH 
