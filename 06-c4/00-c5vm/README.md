@@ -4,6 +4,7 @@
 
 ```
 ccckmit@asus MINGW64 /d/ccc/ccc112a/cpu2os/01-硬體/06-虛擬機/00-c5vm (master)
+$ chmod +x test.sh
 $ ./test.sh
 ++ gcc -w c4.c -o c4
 ++ ./c4 -s test/fib.c
