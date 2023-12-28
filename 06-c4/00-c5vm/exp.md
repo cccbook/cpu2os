@@ -9,14 +9,14 @@ $ ./c4 -s test/exp.c
 1: int main() {
 2:     int x,y,z;
 3:     x = 3+5;
-    ENT  3
-    LLA  -1
-    PSH 
-    IMM  3
-    PSH 
-    IMM  5
-    ADD 
-    SI  
+    ENT  3   // 保留 3 個區域變數空間
+    LLA  -1  // 載入 &x 到 a 暫存器
+    PSH      // 推 a 到堆疊 (&x)
+    IMM  3   // a = 3
+    PSH      // PUSH a (3)
+    IMM  5   // a = 5
+    ADD      // a = a + 3
+    SI       // &x = a, POP
 4:     y = x+4;
     LLA  -2
     PSH 
