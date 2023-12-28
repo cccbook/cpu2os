@@ -1,6 +1,10 @@
-
+# exp.c
 
 ```
+$ ./c4 test/exp.c
+x=8 y=12 z=20
+exit(14) cycle = 41
+
 $ ./c4 -s test/exp.c
 1: int main() {
 2:     int x,y,z;
