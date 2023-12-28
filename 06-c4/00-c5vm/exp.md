@@ -49,7 +49,19 @@ $ ./c4 -s test/exp.c
     LI  
     PSH 
     PRTF
-    ADJ  4
+    ADJ  4 // ENT 3, 4=3（區域變數）+1 (保存的返回點)
 7: }
-    LEV 
+    LEV // 離開函數
+```
+
+注意，LEV 之後由於虛擬機有下列程式，所以最後還是會執行 EXIT 離開。
+
+```
+  bp = sp = (int *)((int)sp + poolsz);
+  *--sp = EXIT; // call exit if main returns
+  *--sp = PSH; t = sp;
+  *--sp = argc;
+  *--sp = (int)argv;
+  *--sp = (int)t;
+  return run(pc, bp, sp);
 ```
