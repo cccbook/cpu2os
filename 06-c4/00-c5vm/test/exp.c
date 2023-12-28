@@ -1,7 +1,7 @@
 int main() {
-    int a,b,c;
-    a = 3+5;
-    b = a+4;
-    c = a+b;
-    printf("a=%d b=%d c=%d\n");
+    int x,y,z;
+    x = 3+5;
+    y = x+4;
+    z = x+y;
+    printf("x=%d y=%d z=%d\n", x, y, z);
 }
