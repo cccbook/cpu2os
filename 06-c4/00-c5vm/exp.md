@@ -1,8 +1,7 @@
 
 
 ```
-guest2024@fqdn:~/cpu2os/06-c4/00-c5vm$ vim test/exp.c
-guest2024@fqdn:~/cpu2os/06-c4/00-c5vm$ ./c4 -s test/exp.c
+$ ./c4 -s test/exp.c
 1: int main() {
 2:     int x,y,z;
 3:     x = 3+5;
