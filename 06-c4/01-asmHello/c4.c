@@ -81,7 +81,7 @@ int run(int *pc, int *bp, int *sp) { // 虛擬機 => pc: 程式計數器, sp: �
   }
 }
 
-int main(int argc, char **argv) // 主程式
+int main() // 主程式
 {
   int *pc, *bp, *sp, poolsz, t;
 

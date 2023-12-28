@@ -82,7 +82,7 @@ int run(int *pc, int *bp, int *sp) { // 虛擬機 => pc: 程式計數器, sp: �
 }
 
 
-int main(int argc, char **argv) // 主程式
+int main() // 主程式
 {
   int *pc, *bp, *sp, poolsz, *t, *fib, *loc;
 
@@ -157,8 +157,6 @@ int main(int argc, char **argv) // 主程式
   bp = sp = (int *)((int)sp + poolsz);
   *--sp = EXIT; // call exit if main returns
   *--sp = PSH; t = sp;
-  *--sp = argc;
-  *--sp = (int)argv;
   *--sp = (int)t;
   return run(pc, bp, sp);
 }
