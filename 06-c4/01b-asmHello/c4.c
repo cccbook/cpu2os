@@ -84,7 +84,7 @@ int run(int *pc, int *bp, int *sp) { // 虛擬機 => pc: 程式計數器, sp: �
 #define E1(op) *e++ = op
 #define E2(op, arg) *e++ = op; *e++ = (int) arg
 
-int main(int argc, char **argv) // 主程式
+int main() // 主程式
 {
   int *pc, *bp, *sp, poolsz, t;
 
