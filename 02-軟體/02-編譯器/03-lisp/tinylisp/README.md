@@ -3,9 +3,9 @@
 https://github.com/Robert-van-Engelen/tinylisp/blob/main/src/tinylisp.c
 
 ```
-$ gcc lisp1.c -o lisp1
+$ gcc tinylisp.c -o tinylisp
 
-$ ./lisp1
+$ ./tinylisp
 tinylisp
 930>((lambda (x y) (+ x y)) 3 4)
 7
