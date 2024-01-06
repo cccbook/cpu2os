@@ -10,7 +10,9 @@
 #define Tk(x) *(u64 *)&x >> 48
 #define N 1024
 
-uint hp = 0, sp = N, ATOM = 0x7ff8, PRIM = 0x7ff9, CONS = 0x7ffa, CLOS = 0x7ffb, NIL = 0x7ffc;
+uint hp = 0; // heap pointer
+uint sp = N; // stack pointer
+uint ATOM = 0x7ff8, PRIM = 0x7ff9, CONS = 0x7ffa, CLOS = 0x7ffb, NIL = 0x7ffc;
 f64 cell[N], nil, tru, err, env;
 
 f64 box(uint t, uint i)
@@ -171,6 +173,7 @@ f64 f_define(f64 t, f64 e)
     return car(t);
 }
 
+// prim: primitive (基本函數)
 struct
 {
     const char *s;
@@ -223,6 +226,7 @@ char get()
     return c;
 }
 
+// 掃描器 lexer = scanner
 char scan()
 {
     int i = 0;
