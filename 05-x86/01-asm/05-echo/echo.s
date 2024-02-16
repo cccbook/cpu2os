@@ -8,6 +8,9 @@
 
         .text
 main:
+        push    %rbx
+
+loop:
         push    %rdi                    # save registers that puts uses
         push    %rsi
         sub     $8, %rsp                # must align stack before call
@@ -21,8 +24,9 @@ main:
 
         add     $8, %rsi                # point to next argument
         dec     %rdi                    # count down
-        jnz     main                    # if not done counting keep going
+        jnz     loop                    # if not done counting keep going
 
+        pop     %rbx
         ret
-format:
-        .asciz  "%s\n"
+
+
