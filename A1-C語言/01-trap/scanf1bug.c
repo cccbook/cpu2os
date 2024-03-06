@@ -3,4 +3,5 @@
 int main() {
   char x = 0;
   scanf("%c", x);
+  // scanf("%c", &x);
 }
