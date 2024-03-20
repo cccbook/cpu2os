@@ -3,7 +3,8 @@ int range_sum(int a, int b) {
     s = 0;
     i = a;
     while (i<=b) {
-        s += i;
+        s = s+i;
+        i = i+1;
     }
     return s;
 }
