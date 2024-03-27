@@ -8,9 +8,9 @@ def evaluate(exp, env={}):
     if isinstance(exp, list):
         # 函數調用
         print('exp:list = ', exp)
-        op = evaluate(exp[0], env)
+        op0 = evaluate(exp[0], env)
         args = [evaluate(arg, env) for arg in exp[1:]]
-        return op(*args)
+        return op0(*args)
     elif isinstance(exp, str) and (exp in env):
         # 變數引用
         print('exp:str = ', exp, ' env[exp]=', env[exp])
