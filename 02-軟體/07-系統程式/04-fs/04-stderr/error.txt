@@ -1,2 +1,0 @@
-Warning: xxx
-Error: yyy
