@@ -112,10 +112,14 @@ void IF() {
   }
 }
 
-// STMT = WHILE | BLOCK | ASSIGN
+// DOWHILE = do STMT while (E);
+
+// STMT = WHILE | BLOCK | IF | DOWHILE | ASSIGN
 void STMT() {
   if (isNext("while"))
-    return WHILE();
+    WHILE();
+  // else if (isNext("do"))
+  //  DOWHILE();
   else if (isNext("if"))
     IF();
   else if (isNext("{"))
