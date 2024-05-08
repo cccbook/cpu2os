@@ -188,6 +188,7 @@ int lex() {
     next();
     if (tk==0) break;
     printTk(tk);
+    if (tk == '"') printf("\n  string=%s", (char*) ival);
     printf("\n");
   }
 }
