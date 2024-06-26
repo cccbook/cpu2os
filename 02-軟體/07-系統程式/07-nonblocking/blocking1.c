@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
             printf("buf is null\n");
         else if(ret > 0)
             printf("buf is %s\n",buf);
-        printf("test\n");
+        printf("ret = %d\n", ret);
         sleep(1);
     }
     close(fd);

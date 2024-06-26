@@ -29,8 +29,8 @@ op = add;
 ## 範例 1 
 
 ```
-$ gcc georgeMary.c -lpthread -o georgeMary.o
-$ ./georgeMary.o
+$ gcc georgeMary.c -lpthread -o georgeMary
+$ ./georgeMary
 George
 ----------------
 Mary

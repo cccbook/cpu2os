@@ -12,7 +12,7 @@ SECTIONS
   .rodata : { *(.rodata) }
 
   /* data: Initialized data segment */
-  . = 0x80000000;
+  /*. = 0x80000000;*/
   .data : { *(.data) }
   .sdata : { *(.sdata) }
   .debug : { *(.debug) }
