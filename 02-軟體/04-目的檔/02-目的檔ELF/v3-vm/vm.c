@@ -15,8 +15,8 @@ void exec_i_type(uint32_t instr)
     uint32_t rd = (instr >> 7) & 0x1F;     // 目的暫存器
     uint32_t funct3 = (instr >> 12) & 0x7; // 功能碼
     uint32_t rs1 = (instr >> 15) & 0x1F;   // 原暫存器1
-    int32_t imm = (instr >> 20);           // 立即數，符號擴展
-    imm = sign_extend_12(imm);
+    int32_t imm = (instr >> 20);           // 立即數
+    imm = sign_extend_12(imm); // 符號擴展
 
     if (opcode == 0x67)
     {
@@ -86,8 +86,8 @@ void exec_b_type(uint32_t instr)
     int32_t imm = ((instr >> 31) & 1) << 12 |
                   ((instr >> 7) & 1) << 11 |
                   ((instr >> 25) & 0x3F) << 5 |
-                  ((instr >> 8) & 0xF) << 1; // 符號擴展
-    imm = sign_extend_12(imm);
+                  ((instr >> 8) & 0xF) << 1; 
+    imm = sign_extend_12(imm); // 符號擴展
 
     switch (funct3)
     {
