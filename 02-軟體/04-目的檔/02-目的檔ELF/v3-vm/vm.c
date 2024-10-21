@@ -52,26 +52,26 @@ void exec_i_type(uint32_t instr)
         switch (funct3)
         {
         case 0x0:
-            printf("addi x%d, x%d, %d", rd, rs1, imm);
-            reg[rd] = reg[rs1]+imm;
+            reg[rd] = reg[rs1]+imm; // addi rd, imm(rs1)
+            printf("x%d=x%d+%d=%d", rd, rs1, imm, reg[rd]);
             break;
         case 0x2: // slti
-            printf("slti x%d, x%d, %d", rd, rs1, imm);
+            reg[rd] = reg[rs1] < imm;
             break;
         case 0x3: // sltiu
-            printf("sltiu x%d, x%d, %d", rd, rs1, imm);
+            reg[rd] = (uint32_t) reg[rs1] < (uint32_t) imm;
             break;
         case 0x4: // xori
-            printf("xori x%d, x%d, %d", rd, rs1, imm);
+            reg[rd] = reg[rs1] ^ imm;
             break;
         case 0x6: // ori
-            printf("ori x%d, x%d, %d", rd, rs1, imm);
+            reg[rd] = reg[rs1] | imm;
             break;
         case 0x7: // andi
-            printf("andi x%d, x%d, %d", rd, rs1, imm);
+            reg[rd] = reg[rs1] | imm;
             break;
         default:
-            printf("Unknown I-Type");
+            perror("Unknown I-Type");
             break;
         }
     }
@@ -92,25 +92,25 @@ void exec_b_type(uint32_t instr)
     switch (funct3)
     {
     case 0x0: // BEQ
-        printf("beq x%d, x%d, %d", rs1, rs2, imm);
+        if (reg[rs1] == reg[rs2]) pc_new = pc+imm;
         break;
     case 0x1: // BNE
-        printf("bne x%d, x%d, %d", rs1, rs2, imm);
+        if (reg[rs1] != reg[rs2]) pc_new = pc+imm;
         break;
     case 0x4: // BLT
-        printf("blt x%d, x%d, %d", rs1, rs2, imm);
+        if (reg[rs1] < reg[rs2]) pc_new = pc+imm;
         break;
     case 0x5: // BGE
-        printf("bge x%d, x%d, %d", rs1, rs2, imm);
+        if (reg[rs1] >= reg[rs2]) pc_new = pc+imm;
         break;
     case 0x6: // BLTU
-        printf("bltu x%d, x%d, %d", rs1, rs2, imm);
+        if ((uint32_t)reg[rs1] < (uint32_t)reg[rs2]) pc_new = pc+imm;
         break;
     case 0x7: // BGEU
-        printf("bgeu x%d, x%d, %d", rs1, rs2, imm);
+        if ((uint32_t)reg[rs1] == (uint32_t)reg[rs2]) pc_new = pc+imm;
         break;
     default:
-        printf("Unknown B-Type");
+        perror("Unknown B-Type");
         break;
     }
 }
@@ -126,47 +126,47 @@ void exec_r_type(uint32_t instr)
 
     if (funct7 == 0x00 && funct3 == 0x00)
     {
-        printf("add x%d, x%d, x%d", rd, rs1, rs2);
+        reg[rd] = reg[rs1]+reg[rs2]; // add
     }
     else if (funct7 == 0x20 && funct3 == 0x00)
     {
-        printf("sub x%d, x%d, x%d", rd, rs1, rs2);
+        reg[rd] = reg[rs1]-reg[rs2]; // sub
     }
     else if (funct3 == 0x01)
     {
-        printf("sll x%d, x%d, x%d", rd, rs1, rs2);
+        reg[rd] = reg[rs1] << (reg[rs2]&0x1F); // sll (Shift Left Logical)
     }
     else if (funct3 == 0x02)
     {
-        printf("slt x%d, x%d, x%d", rd, rs1, rs2);
+        reg[rd] = reg[rs1] < reg[rs2]; // slt (Set if Less Than)
     }
     else if (funct3 == 0x03)
     {
-        printf("sltu x%d, x%d, x%d", rd, rs1, rs2);
+        reg[rd] = (uint32_t)reg[rs1] < (uint32_t)reg[rs2]; // sltu (Set if Less Than Unsigned)
     }
     else if (funct3 == 0x04)
     {
-        printf("xor x%d, x%d, x%d", rd, rs1, rs2);
+        reg[rd] = reg[rs1]^reg[rs2]; // xor
     }
     else if (funct3 == 0x05 && funct7 == 0x00)
     {
-        printf("srl x%d, x%d, x%d", rd, rs1, rs2);
+        reg[rd] = (uint32_t)reg[rs1] >> (reg[rs2]&0x1F); // srl (Shift Right Logical)
     }
     else if (funct3 == 0x05 && funct7 == 0x20)
     {
-        printf("sra x%d, x%d, x%d", rd, rs1, rs2);
+        reg[rd] = reg[rs1] >> (reg[rs2]&0x1F); // sra (Shift Right Arithmatic)
     }
     else if (funct3 == 0x06)
     {
-        printf("or x%d, x%d, x%d", rd, rs1, rs2);
+        reg[rd] = reg[rs1] | reg[rs2]; // or
     }
     else if (funct3 == 0x07)
     {
-        printf("and x%d, x%d, x%d", rd, rs1, rs2);
+        reg[rd] = reg[rs1] & reg[rs2]; // and
     }
     else
     {
-        printf("Unknown R-Type");
+        perror("Unknown R-Type");
     }
 }
 
@@ -181,20 +181,20 @@ void exec_s_type(uint32_t instr)
 
     if (funct3 == 0x0)
     {
-        printf("sb x%d, %d(x%d)", rs2, imm, rs1);
+        *(uint8_t*)&memory[reg[rs1]+imm] = (uint8_t)reg[rs2]; // sb
     }
     else if (funct3 == 0x1)
     {
-        printf("sh x%d, %d(x%d)", rs2, imm, rs1);
+        *(uint16_t*)&memory[reg[rs1]+imm] = (uint16_t)reg[rs2]; // sh
     }
     else if (funct3 == 0x2)
     {
-        memory[reg[rs1]+imm] = rs2;
-        printf("sw x%d, %d(x%d)", rs2, imm, rs1);
+        memory[reg[rs1]+imm] = reg[rs2]; // sw rs2, imm(rs1)
+        printf("m[%d]=x%d=%d ", reg[rs1]+imm, rs2, reg[rs2]);
     }
     else
     {
-        printf("Unknown S-Type");
+        perror("Unknown S-Type");
     }
 }
 
@@ -206,16 +206,17 @@ void exec_u_type(uint32_t instr)
     int32_t imm = (instr & 0xFFFFF000) >> 12; // 高20位立即數
 
     if (opcode == 0x37)
-    { // lui
-        printf("lui x%d, %d", rd, imm);
+    {
+        reg[rd] = (imm & 0xFFFFF) << 12;  // lui
     }
     else if (opcode == 0x17)
-    { // auipc
-        printf("auipc x%d, %d", rd, imm);
+    { 
+        reg[rd] = (imm & 0xFFFFF) << 12 | (pc & 0xFFF); // auipc
+        // 取低 20 位並與低 12 位的 PC 相加
     }
     else
     {
-        printf("Unknown U-Type");
+        perror("Unknown U-Type");
     }
 }
 
@@ -228,7 +229,9 @@ void exec_j_type(uint32_t instr)
                   ((instr >> 21) & 0x3FF) << 1;
     imm = sign_extend_20(imm);
 
-    printf("jal x%d, %d", rd, imm);
+    // JAL
+    reg[rd] = pc + 4; // 當前指令的下一地址
+    pc_new = pc + imm; // 計算跳轉地址
 }
 
 // 根據指令類型調用對應的反組譯函數
@@ -238,6 +241,12 @@ void exec(uint32_t instr)
     uint32_t rd = (instr >> 7) & 0x1F;
     uint32_t rs1 = (instr >> 15) & 0x1F;
     uint32_t rs2 = (instr >> 20) & 0x1F;
+
+    reg[0] = 0;
+    char asm1[100];
+    char type = disassemble(instr, asm1);
+    printf("%04x %s\t# ", pc, asm1);
+
     switch (opcode)
     {
     case 0x03: // Load
@@ -264,19 +273,18 @@ void exec(uint32_t instr)
     default:
         printf("Unknown instruction");
     }
-    printf(" \tx[%d]=%d\n", rd, reg[rd]);
+    printf("\n");
+    // printf("%04x %s  \t# x[%d]=%d\n", pc, asm1, rd, reg[rd]);
 }
 
 void vm_run(char *memory, int size, int entry)
 {
     pc = entry;
-    while (pc < size)
+    while (pc < size-4)
     {
         uint32_t instr = decode_little_endian32(&memory[pc]);
         pc_new = -1;
-        printf("%04x ", pc);
         exec(instr);
-
         pc = (pc_new == -1)?pc+4:pc_new;
     }
 }

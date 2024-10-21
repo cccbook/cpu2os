@@ -91,7 +91,7 @@ int main(int argc, char **argv)
     block_t code_block;
     load_into_memory(file, elf_header, &code_block);
     printf("entry=%04x\n", code_block.entry);
-    disassemble_block(code_block.body, code_block.size);
+    // disassemble_block(code_block.body, code_block.size);
     vm_run(code_block.body, code_block.size, code_block.entry);
     fclose(file);
     return 0;
