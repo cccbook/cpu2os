@@ -1,8 +1,8 @@
 int temp;
 
 #define PUTS(s) __asm__ ( \
-        "li a7, 7\n" \
-        "la a6, %1\n" \
+        "li a0, 1\n" \
+        "la a1, %1\n" \
         "ecall\n" \
         : "=r"(temp) \
         : "r"(s) \

@@ -26,7 +26,8 @@ static void do_i_type(uint32_t instr)
         {
             ecall();
         }
-        else if (imm == 1) {
+        else if (imm == 1)
+        {
             ebreak();
         }
         return;
@@ -131,26 +132,46 @@ static void do_r_type(uint32_t instr)
     uint32_t rs2 = (instr >> 20) & 0x1F;
     uint32_t funct7 = (instr >> 25) & 0x7F;
 
-    if (funct7 == 0x00 && funct3 == 0x00)
+    if (funct7 == 0x00 && funct3 == 0x00) 
+    {
         add(rd, rs1, rs2);
+    }
     else if (funct7 == 0x20 && funct3 == 0x00)
+    {
         sub(rd, rs1, rs2);
+    }
     else if (funct3 == 0x01)
+    {
         sll(rd, rs1, rs2);
+    }
     else if (funct3 == 0x02)
+    {
         slt(rd, rs1, rs2);
+    }
     else if (funct3 == 0x03)
+    {
         sltu(rd, rs1, rs2);
+    }
     else if (funct3 == 0x04)
+    {
         xor(rd, rs1, rs2);
+    }
     else if (funct3 == 0x05 && funct7 == 0x00)
+    {
         srl(rd, rs1, rs2);
+    }
     else if (funct3 == 0x05 && funct7 == 0x20)
+    {
         sra(rd, rs1, rs2);
+    }
     else if (funct3 == 0x06)
+    {
         or (rd, rs1, rs2);
+    }
     else if (funct3 == 0x07)
+    {
         and(rd, rs1, rs2);
+    }
     else
         error("Unknown R-Type");
 }
@@ -164,13 +185,19 @@ static void do_s_type(uint32_t instr)
     int32_t imm = ((instr >> 25) << 5) | ((instr >> 7) & 0x1F);
     imm = sign_extend_12(imm);
 
-    if (funct3 == 0x0) {
+    if (funct3 == 0x0)
+    {
         sb(rs1, rs2, imm);
-    } else if (funct3 == 0x1) {
+    }
+    else if (funct3 == 0x1)
+    {
         sh(rs1, rs2, imm);
-    } else if (funct3 == 0x2) {
+    }
+    else if (funct3 == 0x2)
+    {
         sw(rs1, rs2, imm);
-    } else
+    }
+    else
         error("Unknown S-Type");
 }
 
@@ -182,9 +209,13 @@ static void do_u_type(uint32_t instr)
     int32_t imm = (instr & 0xFFFFF000) >> 12; // 高20位立即數
 
     if (opcode == 0x37)
+    {
         lui(rd, imm);
+    }
     else if (opcode == 0x17)
+    {
         auipc(rd, imm);
+    }
     else
     {
         error("Unknown U-Type");

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "lib.h"
 #include "dasm.h"
 #include "riscv.h"
@@ -9,16 +10,22 @@ int32_t pc, pc_new;
 int32_t reg[32];
 int32_t memory[MEM_SIZE];
 
-#define ecall() 
-#define ebreak() 
+#define SYS_PUTS 1
 
-#define jalr(rd, rs, imm) 
+void ecall() { // 系統呼叫
+    if (reg[A0]==SYS_PUTS) {
+        // printf("%s", (char*)(uint64_t)reg[A1]);
+        printf("\nprint string in a1=%d", A1);
+    }
+}
 
-#define lb(rd, rs, imm)   
-#define lh(rd, rs, imm)   
-#define lw(rd, rs, imm)   
-#define lbu(rd, rs, imm)  
-#define lhu(rd, rs, imm)  
+#define ebreak() // ebreak 為 debugger 用途，本程式沒處理
+
+#define lb(rd, rs, imm)  reg[rd]=*(int8_t*)&memory[reg[rs]+imm]; log("x[%d]=%d", rd, *(int8_t*)&memory[reg[rs]+imm])
+#define lh(rd, rs, imm)  reg[rd]=*(int16_t*)&memory[reg[rs]+imm]; log("x[%d]=%d", rd, *(int16_t*)&memory[reg[rs]+imm])
+#define lw(rd, rs, imm)  reg[rd]=*(int32_t*)&memory[reg[rs]+imm]; log("x[%d]=%d", rd, *(int32_t*)&memory[reg[rs]+imm])  
+#define lbu(rd, rs, imm) reg[rd]=*(uint8_t*)&memory[reg[rs]+imm]; log("x[%d]=%d", rd, *(uint8_t*)&memory[reg[rs]+imm])
+#define lhu(rd, rs, imm) reg[rd]=*(uint16_t*)&memory[reg[rs]+imm]; log("x[%d]=%d", rd, *(uint16_t*)&memory[reg[rs]+imm])
 
 #define addi(rd, rs, imm) reg[rd]=reg[rs]+imm; log("x%d=x%d+%d=%d", rd, rs, imm, reg[rd])
 #define slti(rd, rs, imm) reg[rd]=reg[rs]<<imm
@@ -27,32 +34,36 @@ int32_t memory[MEM_SIZE];
 #define ori(rd, rs, imm)  reg[rd]=reg[rs]|imm
 #define andi(rd, rs, imm) reg[rd]=reg[rs]&imm
 
-#define beq(rs1, rs2, imm) 
-#define bne(rs1, rs2, imm) 
-#define blt(rs1, rs2, imm) 
-#define bge(rs1, rs2, imm) 
-#define bltu(rs1, rs2, imm) 
-#define bgeu(rs1, rs2, imm) 
+#define beq(rs1, rs2, imm)  if (reg[rs1] == reg[rs2]) { pc_new = pc+imm; log("goto %d", pc_new); }
+#define bne(rs1, rs2, imm)  if (reg[rs1] != reg[rs2]) { pc_new = pc+imm; log("goto %d", pc_new); }
+#define blt(rs1, rs2, imm)  if (reg[rs1] <  reg[rs2]) { pc_new = pc+imm; log("goto %d", pc_new); }
+#define bge(rs1, rs2, imm)  if (reg[rs1] >= reg[rs2]) { pc_new = pc+imm; log("goto %d", pc_new); }
+#define bltu(rs1, rs2, imm) if ((uint32_t)reg[rs1] < (uint32_t)reg[rs2]) { pc_new = pc+imm; log("goto %d", pc_new); }
+#define bgeu(rs1, rs2, imm) if ((uint32_t)reg[rs1] >= (uint32_t)reg[rs2]) { pc_new = pc+imm; log("goto %d", pc_new); }
 
 #define add(rd, rs1, rs2) reg[rd]=reg[rs1]+reg[rs2]
 #define sub(rd, rs1, rs2) reg[rd]=reg[rs1]-reg[rs2]
-#define sll(rd, rs1, rs2) reg[rd]=reg[rs1]<<reg[rs2]
+#define sll(rd, rs1, rs2) reg[rs1] << (reg[rs2]&0x1F); 
 #define slt(rd, rs1, rs2) reg[rd]=reg[rs1]<reg[rs2]
-#define sltu(rd, rs1, rs2) reg[rd]=reg[rs1]<reg[rs2] // bug
+#define sltu(rd, rs1, rs2) (uint32_t)reg[rs1] < (uint32_t)reg[rs2]
 #define xor(rd, rs1, rs2) reg[rd]=reg[rs1]^reg[rs2]
-#define srl(rd, rs1, rs2) reg[rd]=reg[rs1]>>reg[rs2] // bug
-#define sra(rd, rs1, rs2) reg[rd]=reg[rs1]>>reg[rs2] // bug
+#define srl(rd, rs1, rs2) (uint32_t)reg[rs1] >> (reg[rs2]&0x1F)
+#define sra(rd, rs1, rs2) reg[rs1] >> (reg[rs2]&0x1F)
 #define or(rd, rs1, rs2) reg[rd]=reg[rs1]|reg[rs2]
 #define and(rd, rs1, rs2) reg[rd]=reg[rs1]&reg[rs2]
 
-#define sb(rs1, rs2, imm) 
-#define sh(rs1, rs2, imm) 
-#define sw(rs1, rs2, imm) *(uint32_t*)&memory[reg[rs1]+imm]=(uint32_t)reg[rs2];log("m[%d]=%d", reg[rs1]+imm, reg[rs2])
+#define sb(rs1, rs2, imm) *(uint8_t*)&memory[reg[rs1]+imm]  = (uint8_t)reg[rs2];  log("m[%d]=x%d=%d ", reg[rs1]+imm, rs2, (int8_t)reg[rs2])
+#define sh(rs1, rs2, imm) *(uint16_t*)&memory[reg[rs1]+imm] = (uint16_t)reg[rs2]; log("m[%d]=x%d=%d ", reg[rs1]+imm, rs2, (int16_t)reg[rs2])
+#define sw(rs1, rs2, imm) *(uint32_t*)&memory[reg[rs1]+imm] = (uint32_t)reg[rs2]; log("m[%d]=x%d=%d ", reg[rs1]+imm, rs2, (int32_t)reg[rs2])
 
-#define lui(rd, imm) 
-#define auipc(rd, imm) 
+#define lui(rd, imm)   reg[rd] = (imm & 0xFFFFF) << 12;log("x[%d]=%d", rd, (imm & 0xFFFFF))
 
-#define jal(rd, imm) 
+#define auipc(rd, imm) reg[rd] = (imm & 0xFFFFF) << 12 | (pc & 0xFFF); log("x[%d]=0x%x", rd, reg[rd])
+#define jalr(rd, rs, imm) reg[rd]=pc+4; pc_new=(reg[rs]+imm) & ~0x3; log("x[%d]=pc+4, goto 0x%x", rd, pc_new)
+// & ~0x3 是為了保證 4byte 對齊
+// call = auipc ra, offset_upper; jalr ra, offset_lower(ra)
+
+#define jal(rd, imm) reg[rd] = pc+4; pc_new = pc+imm; log("x[%d]=%d; goto %d", rd, pc+4, pc_new);
 
 #include "rv32do.c"
 

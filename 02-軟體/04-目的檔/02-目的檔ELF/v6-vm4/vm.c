@@ -117,7 +117,7 @@ void exec_b_type(uint32_t instr)
         if ((uint32_t)reg[rs1] < (uint32_t)reg[rs2]) pc_new = pc+imm;
         break;
     case 0x7: // BGEU
-        if ((uint32_t)reg[rs1] == (uint32_t)reg[rs2]) pc_new = pc+imm;
+        if ((uint32_t)reg[rs1] >= (uint32_t)reg[rs2]) pc_new = pc+imm;
         break;
     default:
         perror("Unknown B-Type");
