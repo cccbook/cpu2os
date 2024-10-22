@@ -48,3 +48,16 @@ char asm1[100];
 #define auipc(rd, imm) dasm("auipc x%d, %d", rd, imm)
 
 #define jal(rd, imm) dasm("jal x%d, %d", rd, imm)
+
+#include "rv32do.c"
+
+void disassemble_block(char *block, int size)
+{
+    for (int pc = 0; pc < size; pc += 4)
+    {
+        uint32_t instruction = decode_little_endian32(&block[pc]);
+        char asm1[100];
+        char type = do_instr(instruction, asm1);
+        printf("%04x %08x %c %s\n", pc, instruction, type, asm1);
+    }
+}
