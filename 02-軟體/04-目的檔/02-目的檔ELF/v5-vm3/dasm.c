@@ -1,6 +1,6 @@
 char asm1[100];
 
-#define dasm(fmt, ...) sprintf(asm1, fmt, __VA_ARGS__)
+#define dasm(...) sprintf(asm1, __VA_ARGS__)
 
 #define ecall() dasm("ecall")
 #define ebreak() dasm("ebreak")
@@ -27,16 +27,16 @@ char asm1[100];
 #define bltu(rs1, rs2, imm) dasm("bltu x%d, x%d, %d", rs1, rs2, imm)
 #define bgeu(rs1, rs2, imm) dasm("bgeu x%d, x%d, %d", rs1, rs2, imm)
 
-#define add(rd, rs1, rs2, imm) dasm("add x%d, x%d, x%d", rd, rs1, rs2)
-#define sub(rd, rs1, rs2, imm) dasm("sub x%d, x%d, x%d", rd, rs1, rs2)
-#define sll(rd, rs1, rs2, imm) dasm("sll x%d, x%d, x%d", rd, rs1, rs2)
-#define slt(rd, rs1, rs2, imm) dasm("slt x%d, x%d, x%d", rd, rs1, rs2)
-#define sltu(rd, rs1, rs2, imm) dasm("sltu x%d, x%d, x%d", rd, rs1, rs2)
-#define xor(rd, rs1, rs2, imm) dasm("xor x%d, x%d, x%d", rd, rs1, rs2)
-#define srl(rd, rs1, rs2, imm) dasm("srl x%d, x%d, x%d", rd, rs1, rs2)
-#define sra(rd, rs1, rs2, imm) dasm("sra x%d, x%d, x%d", rd, rs1, rs2)
-#define or(rd, rs1, rs2, imm) dasm("or x%d, x%d, x%d", rd, rs1, rs2)
-#define and(rd, rs1, rs2, imm) dasm("and x%d, x%d, x%d", rd, rs1, rs2)
+#define add(rd, rs1, rs2) dasm("add x%d, x%d, x%d", rd, rs1, rs2)
+#define sub(rd, rs1, rs2) dasm("sub x%d, x%d, x%d", rd, rs1, rs2)
+#define sll(rd, rs1, rs2) dasm("sll x%d, x%d, x%d", rd, rs1, rs2)
+#define slt(rd, rs1, rs2) dasm("slt x%d, x%d, x%d", rd, rs1, rs2)
+#define sltu(rd, rs1, rs2) dasm("sltu x%d, x%d, x%d", rd, rs1, rs2)
+#define xor(rd, rs1, rs2) dasm("xor x%d, x%d, x%d", rd, rs1, rs2)
+#define srl(rd, rs1, rs2) dasm("srl x%d, x%d, x%d", rd, rs1, rs2)
+#define sra(rd, rs1, rs2) dasm("sra x%d, x%d, x%d", rd, rs1, rs2)
+#define or(rd, rs1, rs2) dasm("or x%d, x%d, x%d", rd, rs1, rs2)
+#define and(rd, rs1, rs2) dasm("and x%d, x%d, x%d", rd, rs1, rs2)
 
 #define sb(rs1, rs2, imm) dasm("sb x%d, %d(x%d)", rs1, imm, rs2)
 #define sh(rs1, rs2, imm) dasm("sh x%d, %d(x%d)", rs1, imm, rs2)
@@ -59,5 +59,3 @@ void disassemble_block(char *block, int size)
         printf("%04x %08x %c %s\n", pc, instruction, type, asm1);
     }
 }
-
-#include "rv32do.c"
