@@ -1,4 +1,8 @@
+## 未解決問題
 
+像 puts("hello") 這樣的字串，定址會有問題，如何解決？
+
+## 已解決問題
 
 main, sum 這樣的函數指向不同位址?? NO
 
@@ -29,3 +33,9 @@ void auipc(VM* vm, uint8_t rd, uint32_t imm) {
     vm->registers[rd] = current_pc + upper_imm;
 }
 ```
+
+解決了，因為 gcc 設定 -c 只編譯不連結，所以 objdump 反組譯就錯了。
+
+拿掉 -c 改只用 -nostdlib ，然後加上  -Wl,--section-start=.text=0x0 從 0 開始，就可以用了。
+
+
