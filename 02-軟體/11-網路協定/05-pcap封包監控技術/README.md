@@ -92,3 +92,66 @@ sendto(sock, buffer, iph->tot_len, 0, (struct sockaddr *)&dest, sizeof(dest));
 
 ### 小結
 在 Linux 上，原始套接字允許應用程式存取和操作網路層甚至鏈路層的封包，提供了非常靈活的封包操作能力。這種靈活性對網路分析、安全檢測、自定義協議實作等應用場景非常重要，但也因其高權限需求而需要注意安全性。
+
+## ccc: 如何用程式將網路介面卡設置為混雜模式
+
+在 Linux 上，可以使用 `ioctl` 系統呼叫來將網路介面卡設置為混雜模式。以下是使用 C 語言程式設置混雜模式的範例：
+
+```c
+#include <stdio.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <sys/socket.h>
+
+int main() {
+    int sockfd;
+    struct ifreq ifr;
+
+    // 建立一個套接字
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd < 0) {
+        perror("socket");
+        return 1;
+    }
+
+    // 指定網路介面，例如 "eth0"
+    strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+
+    // 取得目前的介面標誌
+    if (ioctl(sockfd, SIOCGIFFLAGS, &ifr) == -1) {
+        perror("SIOCGIFFLAGS");
+        close(sockfd);
+        return 1;
+    }
+
+    // 設置混雜模式標誌
+    ifr.ifr_flags |= IFF_PROMISC;
+
+    // 更新介面標誌以啟用混雜模式
+    if (ioctl(sockfd, SIOCSIFFLAGS, &ifr) == -1) {
+        perror("SIOCSIFFLAGS");
+        close(sockfd);
+        return 1;
+    }
+
+    printf("混雜模式已啟用。\n");
+
+    // 記得最後清理套接字
+    close(sockfd);
+    return 0;
+}
+```
+
+### 說明
+
+1. **建立套接字**：這裡使用 `socket(AF_INET, SOCK_DGRAM, 0)` 建立一個套接字，用來進行 `ioctl` 呼叫。
+2. **設置介面名稱**：用 `strncpy` 將目標網路介面名稱（例如 `eth0`）複製到 `ifr.ifr_name` 中。
+3. **取得和設定標誌**：
+   - 使用 `SIOCGIFFLAGS` 取得目前的介面標誌。
+   - 修改 `ifr_flags` 欄位，設置 `IFF_PROMISC` 以啟用混雜模式。
+4. **更新設定**：使用 `SIOCSIFFLAGS` 更新網路介面的標誌，將設定套用到指定的介面。
+5. **關閉套接字**：結束後記得關閉套接字。
+
+這樣，`eth0` 介面就會被設置為混雜模式。
