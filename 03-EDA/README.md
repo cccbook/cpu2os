@@ -17,3 +17,6 @@
     * svase: (pulp) SystemVerilog pre-elaborator
     * morty: (pulp) Morty reads SystemVerilog files and pickles them into a single file for easier handling. 
 
+## 其他用 Open Source EDA 製程 tapeout 過的 IC 
+
+* https://github.com/TinyTapeout
