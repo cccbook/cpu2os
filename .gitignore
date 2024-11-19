@@ -5,6 +5,7 @@
 !/**/
 !*.*
 
+!Dockerfile
 !Makefile
 !README
 !LICENSE
