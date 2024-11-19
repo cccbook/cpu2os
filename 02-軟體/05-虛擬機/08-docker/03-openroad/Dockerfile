@@ -21,6 +21,9 @@ RUN curl -fsSL https://deno.land/install.sh | sh
 # COPY . .
 COPY ./home /home/
 
+# install openroad
+RUN /home/install/install_openroad.sh
+
 RUN source ./home/.bashrc
 
 # ubuntu yosys repository is not compatible with other tools
