@@ -3,7 +3,11 @@
 * https://github.com/NVIDIA/cuda-samples
     * https://github.com/NVIDIA/cuda-samples/blob/master/Samples/1_Utilities/deviceQuery/deviceQuery.cpp
     * https://github.com/NVIDIA/cuda-samples/blob/master/Samples/2_Concepts_and_Techniques/dct8x8/dct8x8.cu
-
+* https://github.com/karpathy/llm.c
+    * https://github.com/karpathy/llm.c/blob/master/llmc/cuda_common.h
+    * https://github.com/karpathy/llm.c/blob/master/llmc/cublas_common.h
+    * https://github.com/karpathy/llm.c/blob/master/llmc/cudnn_att.h
+    * https://github.com/karpathy/llm.c/blob/master/llmc/attention.cuh
 
 ## book
 * https://gist.github.com/diorahman/648478c2c5c24d819f0f
