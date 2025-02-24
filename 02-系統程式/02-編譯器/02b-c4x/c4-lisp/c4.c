@@ -231,7 +231,8 @@ int lex() {
 
 int ty;
 
-// CALL(id) = (E*)
+// LIST = (op ARGS)
+// ARGS = 
 // F = (E) | Number | Id | CALL
 // E = F (op E)*
 // ASSIGN = id '=' E
@@ -333,7 +334,7 @@ int expr() {
 
 int stmt() {
   int *a, *b;
-  if (t.tk == Int || t.tk == Char) { // 宣告 ex: int a, b;
+  if (t.tk == Int || t.tk == Char) {
     next();
     // while (t.tk != ';') {
       ty = (t.tk == Int) ? INT : CHAR;
@@ -362,18 +363,9 @@ int stmt() {
     next();
   } else if (t.tk == ';') { // ; 空陳述
     next();
-  } else { // ASSIGN or EXP
-    if (t.tk == Id) {
-      next();
-      if (t.tk == '(') {
-
-      } else if (t.tk == Assign) {
-
-      } else {
-        expr();
-      }
-    }
-    if (t.tk == ';') next(); else { printf("stmt: %d: semicolon expected\n", line); exit(-1); }
+  } else {
+    expr();
+    if (t.tk == ';') next(); else { printf("stmt:expr: %d: semicolon expected\n", line); exit(-1); }
   }
 }
 

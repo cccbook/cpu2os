@@ -75,9 +75,9 @@ void next() // 詞彙解析 lexer
         tk = tk * 147 + *p++;  // 計算雜湊值
       tk = (tk << 6) + (p - pp); // 符號表的雜湊位址 ??
       id = sym;
-      while (id[Tk]) { // 檢查是否碰撞 ?
-        if (tk == id[Hash] && !memcmp((char *)id[Name], pp, p - pp)) { tk = id[Tk]; return; } // 沒碰撞就傳回 token
-        id = id + Idsz; // 碰撞，前進到下一格。
+      while (id[Tk]) { // 符號表查詢
+        if (tk == id[Hash] && !memcmp((char *)id[Name], pp, p - pp)) { tk = id[Tk]; return; } // 找到就傳回
+        id = id + Idsz; // 還沒找到，前進到下一格。
       }
       id[Name] = (int)pp; // id.Name = ptr(變數名稱)
       id[Hash] = tk; // id.Hash = 雜湊值
