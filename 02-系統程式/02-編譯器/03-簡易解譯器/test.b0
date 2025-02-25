@@ -1,0 +1,5 @@
+x=3
+loop:
+print x
+x=x-1        
+if x>0 goto loop
