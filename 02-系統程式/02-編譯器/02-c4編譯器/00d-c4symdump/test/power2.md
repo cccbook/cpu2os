@@ -1,6 +1,9 @@
 
 ```sh
-(base) teacher@teacherdeiMac 00d-c4symdump % ./c4 -s test/power2.c
+$ ./test.sh
+# 以下省略...
+
+$ ./c4 -s test/power2.c
 1: #include <stdio.h>
 2: int power2(int n) {
 3:    int r, i;
