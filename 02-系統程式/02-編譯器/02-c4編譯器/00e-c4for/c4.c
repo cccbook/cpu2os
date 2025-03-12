@@ -59,7 +59,7 @@ void next() // 詞彙解析 lexer
         printf("%d: %.*s", line, p - lp, lp); // 印出該行
         lp = p; // lp = p = 新一行的原始碼開頭
         while (le < e) { // 印出上一行的所有目的碼
-          printf("  %lld: %8.4s", le+1, &"LLA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,"
+          printf("  %lld: %8.4s", le, &"LLA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PSH ,"
                            "OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,"
                            "OPEN,READ,CLOS,PRTF,MALC,FREE,MSET,MCMP,EXIT,"[*++le * 5]);
           if (*le <= ADJ) printf("%lld\n", *++le); else printf("\n"); // LLA ,IMM ,JMP ,JSR ,BZ  ,BNZ ,ENT ,ADJ 有一個參數。
