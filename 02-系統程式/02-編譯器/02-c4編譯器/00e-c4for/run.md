@@ -1,6 +1,6 @@
 
 ```sh
-(env) cccimac@cccimacdeiMac 00e-c4symstru % ./test.sh
+(env) cccimac@cccimacdeiMac 00d-c4symdump % ./test.sh
 + gcc -w c4.c -o c4
 + ./c4 -s test/fib.c
 1: #include <stdio.h>
@@ -32,7 +32,7 @@
     IMM  1
     SUB 
     PSH 
-    JSR  671383560
+    JSR  1342472200
     ADJ  1
     PSH 
     LLA  2
@@ -41,7 +41,7 @@
     IMM  2
     SUB 
     PSH 
-    JSR  671383560
+    JSR  1342472200
     ADJ  1
     ADD 
     LEV 
@@ -51,11 +51,11 @@
 9: int main() {
 10:   printf("f(7)=%d\n", f(7));
     ENT  0
-    IMM  671645696
+    IMM  1342734336
     PSH 
     IMM  7
     PSH 
-    JSR  671383560
+    JSR  1342472200
     ADJ  1
     PSH 
     PRTF
@@ -81,8 +81,8 @@ sym[14]: memset   len=6 tk=133 class=130 type=1 val=36
 sym[15]: memcmp   len=6 tk=133 class=130 type=1 val=37
 sym[16]: exit     len=4 tk=133 class=130 type=1 val=38
 sym[17]: void     len=4 tk=134 class=0 type=0 val=0
-sym[18]: main     len=4 tk=133 class=129 type=1 val=1476690360
-sym[19]: f        len=1 tk=133 class=129 type=1 val=1476689928
+sym[18]: main     len=4 tk=133 class=129 type=1 val=671383992
+sym[19]: f        len=1 tk=133 class=129 type=1 val=671383560
 sym[20]: n        len=1 tk=133 class=0 type=0 val=0
 + ./c4 test/fib.c
 f(7)=13
@@ -90,4 +90,13 @@ exit(8) cycle = 920
 + ./c4 hello.c
 hello, world
 exit(0) cycle = 9
++ ./c4 c4.c hello.c
+hello, world
+exit(0) cycle = 9
+exit(0) cycle = 27265
++ ./c4 c4.c c4.c hello.c
+hello, world
+exit(0) cycle = 9
+exit(0) cycle = 27265
+exit(0) cycle = 11797515
 ```
