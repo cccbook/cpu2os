@@ -295,7 +295,7 @@ void expr(int lev) // 運算式 expression, 其中 lev 代表優先等級
 
 void stmt() // 陳述 statement
 {
-  int *a, *b;
+  int *a, *b, *s2, *s3;
 
   if (tk == If) { // if 語句
     next();
@@ -329,7 +329,7 @@ void stmt() // 陳述 statement
     expr(Assign);  // exp1
     if (tk == ';') next(); else { printf("%d: semicolon expected\n", line); exit(-1); }
     
-    int *s2 = e + 1; // s2 是 exp2 開頭
+    s2 = e + 1; // s2 是 exp2 開頭
     expr(Assign);    // exp2
     if (tk == ';') next(); else { printf("%d: semicolon expected\n", line); exit(-1); }
     
@@ -337,7 +337,7 @@ void stmt() // 陳述 statement
     
     *++e = JMP; b = ++e; // 跳到 stmt (b 記住跳耀位址)
 
-    int *s3 = e + 1; // s3 記住 exp3 開頭
+    s3 = e + 1; // s3 記住 exp3 開頭
     expr(Assign);
     *++e = JMP; *++e = (int) s2; // 跳回 exp2 開頭
     if (tk == ')') next(); else { printf("%d: close paren expected\n", line); exit(-1); }
