@@ -219,12 +219,6 @@ int lex() {
   }
 }
 
-/*
-int compile() {
-
-}
-*/
-
 int main(int32_t argc, char *argv[]) // 主程式
 {
   --argc; ++argv;
@@ -247,20 +241,4 @@ int main(int32_t argc, char *argv[]) // 主程式
   if (len <= 0) { printf("read() returned %d\n", len); return -1; }
   lex();
 
-/*
-  pc = e;
-// 1: int main()
-// 2: {
-// 3:   printf("hello, world\n");
-  *e++ = ENT; *e++ = 0;
-  *e++ = IMM; *e++ = (int) "hello, world\n";
-  *e++ = PSH;
-  *e++ = PRTF;
-  *e++ = ADJ; *e++ = 1;
-// 4:   exit();
-  *e++ = EXIT;
-// 5: }
-*/
-  // bp = sp = (int *)((int)stack + POOL_SIZE); // setup stack
-  // return run(pc, bp, sp);
 }
