@@ -8,8 +8,8 @@ Linux 系統呼叫表 -- https://blog.rchapman.org/posts/Linux_System_Call_Table
 
 用 ssh 連上我的虛擬主機
 
-網址: guest@172.104.100.202
-密碼: 每學期不同
+網址: ssh guest@139.162.90.34
+密碼: csie320
 
 連上後請切到資料夾 ~/course/sp/code/c/03-asmVm/asm/linux
 
