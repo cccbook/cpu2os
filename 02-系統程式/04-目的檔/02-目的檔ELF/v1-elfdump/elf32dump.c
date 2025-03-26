@@ -5,10 +5,6 @@
 #include <elf.h>
 #include <stdbool.h>
 
-#include "riscv.c"
-#include "lib.c"
-#include "dasm.c"
-
 bool is_dump = true;
 
 void dump_elf_header(FILE *file, Elf32_Ehdr elf_header) {
