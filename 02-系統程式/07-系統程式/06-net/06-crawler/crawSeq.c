@@ -6,9 +6,10 @@ int main(int argc, char *argv[]) {
     char *host = (argc >= 3) ? argv[2] : "localhost";
     char head[PACKET_MAX];
     for (int i=0; i<LIST_SIZE; i++) {
-        char file[100];
+        char file[100], portStr[100];
         sprintf(file, "page/%s", list[i]);
+        sprintf(portStr, "%d", port);
         // httpDownload("misavo.com", 80, list[i], head, file);
-        httpDownload(host, port, list[i], head, file);
+        httpDownload(host, portStr, list[i], head, file);
     }
 }

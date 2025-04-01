@@ -7,9 +7,10 @@ char *host;
 
 void* getPage(void *ip) {
   int i = *(int*) ip;
-  char file[100], head[PACKET_MAX];
+  char file[100], portStr[100], head[PACKET_MAX];
   sprintf(file, "page/%s", list[i]);
-  httpDownload(host, port, list[i], head, file);
+  sprintf(portStr, "%d", port);
+  httpDownload(host, portStr, list[i], head, file);
   return NULL;
 }
 
