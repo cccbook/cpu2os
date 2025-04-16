@@ -3,11 +3,13 @@
 #include <sys/types.h> 
 #include <sys/wait.h>
 
-void mysystem(char *arg[]) {
+int mysystem(char *arg[]) {
   if (fork()==0) {
     execvp(arg[0], arg); // child : exec("ls -l")
   }
-  wait(NULL);
+  int status;
+  wait(&status);
+  return status;
 }
 
 int main() {
