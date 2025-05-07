@@ -1,6 +1,8 @@
 # epoll
 
 * [我读过的最好的epoll讲解](https://zhuanlan.zhihu.com/p/36764771) (讚)
+    * 備份 -- https://juejin.cn/post/6963589249463500831
+    * https://www.cnblogs.com/liushui-sky/p/7777665.html
 
 輪詢 poll 浪費時間
 
