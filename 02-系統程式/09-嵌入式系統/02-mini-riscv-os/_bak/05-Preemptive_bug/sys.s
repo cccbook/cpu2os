@@ -154,8 +154,6 @@ sys_timer:
         sw a3, 8(a0)
         csrr a1, mepc
         sw a1, 20(a0)     # save mepc to scratch area 
-        csrr a1, mcause
-        sw a1, 24(a0)     # save mcause to scratch area 
 
         la a1, sys_kernel # mepc = sys_kernel (la : load address)
         csrw mepc, a1     # mret : will jump to sys_kernel
