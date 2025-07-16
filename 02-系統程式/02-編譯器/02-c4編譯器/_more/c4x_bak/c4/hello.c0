@@ -1,0 +1,2 @@
+printf("1+2=%d\n", 3);
+printf("Hello World!\n");

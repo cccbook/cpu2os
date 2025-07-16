@@ -70,7 +70,7 @@ pgdata/
 *.exe.stackdump
 *.hack
 # *.bin
-*.o
+# *.o
 *.zip
 a.out
 *.a
