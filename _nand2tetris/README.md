@@ -5,13 +5,3 @@
 * https://coldnew.github.io/nand2tetris/
 * https://github.com/nand2tetris
 
-## 參考專案
-
-* https://github.com/havivha/Nand2Tetris (python)
-* https://github.com/EDalSanto/Nand2Tetris (python)
-* https://github.com/mfl28/JackCompiler (C++)
-    * https://github.com/mfl28/HackVMTranslator
-    * https://github.com/mfl28/HackAssembler
-* https://github.com/santigl/nand2tetris (C++)
-* https://github.com/benvenutti/nand2tetris (C++)
-* https://github.com/xms0g/hvm/blob/master/hvm.c
