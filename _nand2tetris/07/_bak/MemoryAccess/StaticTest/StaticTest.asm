@@ -1,5 +1,3 @@
-
-// ========== File: MemoryAccess/StaticTest/StaticTest.vm ==========
 // push constant 111
 @111
 D=A

@@ -1,5 +1,3 @@
-
-// ========== File: MemoryAccess/BasicTest/BasicTest.vm ==========
 // push constant 10
 @10
 D=A

@@ -2,12 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <dirent.h>
-#include <sys/stat.h>
 
 #define MAX_LINE 256
 #define MAX_LABEL 128
-#define MAX_FILES 100
 
 // 全域變數
 static int label_count = 0;
@@ -250,34 +247,41 @@ void process_command(FILE* out, char* line) {
 // 寫入 bootstrap 程式碼
 void write_bootstrap(FILE* out) {
     fprintf(out, "// Bootstrap code\n");
-    fprintf(out, "// Initialize SP = 256\n");
-    fprintf(out, "@256\n");
-    fprintf(out, "D=A\n");
-    fprintf(out, "@SP\n");
-    fprintf(out, "M=D\n");
-    fprintf(out, "// Call Sys.init\n");
+    fprintf(out, "@256\nD=A\n@SP\nM=D\n");
     write_call(out, "Sys.init", 0);
 }
 
-// 處理單個 VM 檔案
-void translate_file(FILE* out, const char* filename) {
-    FILE* in = fopen(filename, "r");
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        printf("使用方式: %s <input.vm> <output.asm>\n", argv[0]);
+        return 1;
+    }
+    
+    FILE* in = fopen(argv[1], "r");
     if (!in) {
-        printf("警告: 無法開啟檔案 %s\n", filename);
-        return;
+        printf("無法開啟輸入檔案: %s\n", argv[1]);
+        return 1;
+    }
+    
+    FILE* out = fopen(argv[2], "w");
+    if (!out) {
+        printf("無法建立輸出檔案: %s\n", argv[2]);
+        fclose(in);
+        return 1;
     }
     
     // 取得檔案名稱 (不含路徑和副檔名)
-    const char* base_name = strrchr(filename, '/');
-    if (!base_name) base_name = strrchr(filename, '\\');
-    if (!base_name) base_name = filename;
+    char* base_name = strrchr(argv[1], '/');
+    if (!base_name) base_name = strrchr(argv[1], '\\');
+    if (!base_name) base_name = argv[1];
     else base_name++;
     
     strncpy(current_file, base_name, MAX_LABEL - 1);
     char* dot = strrchr(current_file, '.');
     if (dot) *dot = '\0';
     
-    fprintf(out, "\n// ========== File: %s ==========\n", filename);
+    // 寫入 bootstrap 程式碼 (可選)
+    // write_bootstrap(out);
     
     // 處理每一行
     char line[MAX_LINE];
@@ -291,31 +295,8 @@ void translate_file(FILE* out, const char* filename) {
     }
     
     fclose(in);
-}
-
-int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        printf("使用方式: %s <output.asm> <file1.vm> [file2.vm] ...\n", argv[0]);
-        return 1;
-    }
-    
-    FILE* out = fopen(argv[1], "w");
-    if (!out) {
-        printf("無法建立輸出檔案: %s\n", argv[1]);
-        return 1;
-    }
-    
-    // 多檔案時寫入 bootstrap
-    if (argc > 3) {
-        write_bootstrap(out);
-    }
-    
-    // 處理每個輸入檔案
-    for (int i = 2; i < argc; i++) {
-        translate_file(out, argv[i]);
-    }
-    
     fclose(out);
-    printf("轉換完成: %s\n", argv[1]);
+    
+    printf("轉換完成: %s -> %s\n", argv[1], argv[2]);
     return 0;
 }

@@ -1,1 +1,1 @@
-./vm2asm $1.vm $1.asm
+./vm2asm $1.asm $1.vm
