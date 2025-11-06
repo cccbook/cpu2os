@@ -1,5 +1,5 @@
-CC := gcc -std=c99
-CPPC := g++ -std=c++11
+CC := gcc -w -std=c99
+CPPC := g++ -w -std=c++11
 TARGET = asm vm dasm
 
 all: $(TARGET)
