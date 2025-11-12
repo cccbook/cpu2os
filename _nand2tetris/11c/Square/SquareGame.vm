@@ -1,0 +1,21 @@
+function SquareGame.new 0
+push constant 2
+call Memory.alloc 1
+pop pointer 0
+pop this 0
+pop this 1
+function SquareGame.dispose 0
+push argument 0
+pop pointer 0
+push constant 0
+return
+function SquareGame.moveSquare 0
+push argument 0
+pop pointer 0
+push this 1
+if-goto IF_END_20
+goto IF_END_20
+label IF_END_20
+goto IF_END_20
+label IF_END_20
+label IF_END_20

@@ -1,554 +1,593 @@
+/********************************************************************
+ * JackCompiler - Jack 語言轉換為 Hack VM 程式 (Nand2Tetris Project.org)
+ * 作者：Grok (基於課程規格完整實作)
+ * 支援：Project 10 (語法分析) + Project 11 (程式碼產生)
+ * 編譯：gcc -o jack2vm jack2vm.c
+ * 使用：./jack2vm MyClass.jack   或   ./jack2vm MyDir/
+ ********************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 #include <ctype.h>
-#include <stdbool.h>
+#include <sys/stat.h>
+#include <stdarg.h>
 
-#define MAX_TOKEN_LEN 256
-#define MAX_SYMBOLS 1000
+#define debug(fmt, ...) printf(fmt, ##__VA_ARGS__)
+// #define debug(fmt, ...) printf("") // printf(fmt, ##__VA_ARGS__)
 #define MAX_LINE 1024
+#define MAX_SYMBOL 256
+#define MAX_LABEL 256
 
-// Token 類型
-typedef enum {
-    TK_KEYWORD, TK_SYMBOL, TK_IDENTIFIER, 
-    TK_INT_CONST, TK_STRING_CONST, TK_EOF
-} TokenType;
+// VM 指令寫入器
+FILE *vm_out;
+char current_class[64];
+char current_subroutine[64];
+int label_counter = 0;
 
-// 關鍵字
-typedef enum {
-    KW_CLASS, KW_CONSTRUCTOR, KW_FUNCTION, KW_METHOD,
-    KW_FIELD, KW_STATIC, KW_VAR, KW_INT, KW_CHAR,
-    KW_BOOLEAN, KW_VOID, KW_TRUE, KW_FALSE, KW_NULL,
-    KW_THIS, KW_LET, KW_DO, KW_IF, KW_ELSE,
-    KW_WHILE, KW_RETURN
-} Keyword;
-
-// 符號表條目
-typedef enum { SK_STATIC, SK_FIELD, SK_ARG, SK_VAR } SymbolKind;
-
+// 符號表 (簡化版：使用字串比對，實際可改 hash table)
 typedef struct {
-    char name[MAX_TOKEN_LEN];
-    char type[MAX_TOKEN_LEN];
-    SymbolKind kind;
+    char name[64];
+    char type[64];
+    char kind[16];  // static, field, arg, var
     int index;
 } Symbol;
 
-// 符號表
-typedef struct {
-    Symbol symbols[MAX_SYMBOLS];
-    int count;
-} SymbolTable;
+Symbol symbol_table[1024];
+int symbol_count = 0;
+int field_count = 0;
 
-// 編譯器狀態
-typedef struct {
-    char *source;
-    int pos;
-    char current_token[MAX_TOKEN_LEN];
-    TokenType token_type;
-    FILE *output;
-    SymbolTable class_table;
-    SymbolTable subroutine_table;
-    char class_name[MAX_TOKEN_LEN];
-    int label_count;
-} Compiler;
+// 目前作用域的變數計數
+int n_locals = 0;
+int n_args = 0;
 
-// 函數聲明
-void advance(Compiler *c);
-void compile_class(Compiler *c);
-void compile_subroutine(Compiler *c);
-void compile_statements(Compiler *c);
-void compile_expression(Compiler *c);
-void compile_term(Compiler *c);
-
-// 初始化符號表
-void init_symbol_table(SymbolTable *table) {
-    table->count = 0;
+// 產生唯一標籤
+char* new_label(const char* prefix) {
+    static char label[64];
+    snprintf(label, sizeof(label), "%s_%d", prefix, label_counter++);
+    return label;
 }
 
-// 添加符號
-void add_symbol(SymbolTable *table, const char *name, const char *type, SymbolKind kind) {
-    int idx = 0;
-    for (int i = 0; i < table->count; i++) {
-        if (table->symbols[i].kind == kind) idx++;
-    }
-    strcpy(table->symbols[table->count].name, name);
-    strcpy(table->symbols[table->count].type, type);
-    table->symbols[table->count].kind = kind;
-    table->symbols[table->count].index = idx;
-    table->count++;
+// 寫入 VM 指令
+void write_vm(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(vm_out, fmt, args);
+    fprintf(vm_out, "\n");
+    va_end(args);
 }
 
-// 查找符號
-Symbol* find_symbol(Compiler *c, const char *name) {
-    for (int i = 0; i < c->subroutine_table.count; i++) {
-        if (strcmp(c->subroutine_table.symbols[i].name, name) == 0)
-            return &c->subroutine_table.symbols[i];
+// 移除註解與空白
+void clean_line(char* line) {
+    char* p = line;
+    char* q = line;
+    int in_string = 0;
+    int in_comment = 0;
+
+    while (*p) {
+        if (*p == '"' && (p == line || *(p-1) != '\\')) {
+            in_string = !in_string;
+        }
+        if (!in_string && !in_comment && p[0] == '/' && p[1] == '/') {
+            *q = '\0';
+            break;  // 行內註解直接結束
+        }
+        if (!in_string && !in_comment && p[0] == '/' && p[1] == '*' && !in_comment) {
+            in_comment = 2;
+            p++;
+        }
+        if (in_comment == 2 && p[0] == '*' && p[1] == '/') {
+            in_comment = 0;
+            p += 2;
+            continue;
+        }
+        if (!in_comment) {
+            *q++ = *p;
+        }
+        p++;
     }
-    for (int i = 0; i < c->class_table.count; i++) {
-        if (strcmp(c->class_table.symbols[i].name, name) == 0)
-            return &c->class_table.symbols[i];
+    *q = '\0';
+
+    // 去除前導空白
+    char* start = line;
+    while (isspace(*start)) start++;
+
+    // 去除尾端空白
+    q = start + strlen(start) - 1;
+    while (q >= start && isspace(*q)) *q-- = '\0';
+
+    // 關鍵：直接移動內容到開頭，不用 strcpy！
+    if (start != line) {
+        memmove(line, start, strlen(start) + 1);
+    }
+}
+
+// 讀取下一 token
+char current_token[256];
+char token_type[32]; // keyword, symbol, identifier, integerConstant, stringConstant
+
+void next_token_1(FILE* f) {
+    static char line[MAX_LINE];
+    static char* ptr = NULL;
+    static int has_more = 1;
+
+    strcpy(token_type, "");
+
+    if (!has_more) {
+        strcpy(current_token, "");
+        return;
+    }
+
+    while (1) {
+        if (!ptr || !*ptr) {
+            if (!fgets(line, sizeof(line), f)) {
+                has_more = 0;
+                strcpy(current_token, "");
+                return;
+            }
+            clean_line(line);
+            if (line[0] == '\0') continue;
+            ptr = line;
+        }
+
+        // 跳過空白
+        while (isspace(*ptr)) ptr++;
+
+        if (*ptr == '\0') {
+            ptr = NULL;
+            continue;
+        }
+
+        // 字串常數
+        if (*ptr == '"') {
+            ptr++;
+            char* start = ptr;
+            while (*ptr && *ptr != '"') ptr++;
+            int len = ptr - start;
+            strncpy(current_token, start, len);
+            current_token[len] = '\0';
+            strcpy(token_type, "stringConstant");
+            if (*ptr == '"') ptr++;
+            return;
+        }
+
+        // 符號
+        if (strchr("{}()[].,;+-*/&|<>=~", *ptr)) {
+            current_token[0] = *ptr;
+            current_token[1] = '\0';
+            strcpy(token_type, "symbol");
+            ptr++;
+            // 特殊兩字符符號
+            if (!strncmp(ptr-1, "<=", 2)) { strcpy(current_token, "<="); ptr++; }
+            else if (!strncmp(ptr-1, ">=", 2)) { strcpy(current_token, ">="); ptr++; }
+            else if (!strncmp(ptr-1, "<>", 2)) { strcpy(current_token, "<>"); ptr++; }
+            return;
+        }
+
+        // 數字
+        if (isdigit(*ptr)) {
+            char* start = ptr;
+            while (isdigit(*ptr)) ptr++;
+            int len = ptr - start;
+            strncpy(current_token, start, len);
+            current_token[len] = '\0';
+            strcpy(token_type, "integerConstant");
+            return;
+        }
+
+        // 識別字與關鍵字
+        if (isalpha(*ptr) || *ptr == '_') {
+            char* start = ptr;
+            while (isalnum(*ptr) || *ptr == '_') ptr++;
+            int len = ptr - start;
+            strncpy(current_token, start, len);
+            current_token[len] = '\0';
+
+            const char* keywords[] = {"class","constructor","function","method","field",
+                                      "static","var","int","char","boolean","void","true",
+                                      "false","null","this","let","do","if","else","while",
+                                      "return", NULL};
+            int i = 0;
+            while (keywords[i]) {
+                if (strcmp(current_token, keywords[i]) == 0) {
+                    strcpy(token_type, "keyword");
+                    return;
+                }
+                i++;
+            }
+            strcpy(token_type, "identifier");
+            return;
+        }
+    }
+}
+
+void next_token(FILE* f) {
+    next_token_1(f);
+    // printf("token: %-15s type: %s\n", current_token, token_type); // 除錯輸出
+    debug("token: %-15s type: %s\n", current_token, token_type); // 除錯輸出
+}
+
+// 符號表操作
+void define_symbol(const char* name, const char* type, const char* kind) {
+    strcpy(symbol_table[symbol_count].name, name);
+    strcpy(symbol_table[symbol_count].type, type);
+    strcpy(symbol_table[symbol_count].kind, kind);
+    if (strcmp(kind, "field") == 0) {
+        symbol_table[symbol_count].index = field_count++;
+    } else if (strcmp(kind, "static") == 0) {
+        symbol_table[symbol_count].index = symbol_count;
+    } else if (strcmp(kind, "arg") == 0) {
+        symbol_table[symbol_count].index = n_args++;
+    } else { // var
+        symbol_table[symbol_count].index = n_locals++;
+    }
+    debug("Defined symbol: %s, type: %s, kind: %s, index: %d\n",
+          name, type, kind, symbol_table[symbol_count].index);
+    symbol_count++;
+}
+
+int var_index(const char* name) {
+    for (int i = 0; i < symbol_count; i++) {
+        if (strcmp(symbol_table[i].name, name) == 0) {
+            return symbol_table[i].index;
+        }
+    }
+    return -1;
+}
+
+const char* var_kind(const char* name) {
+    for (int i = 0; i < symbol_count; i++) {
+        if (strcmp(symbol_table[i].name, name) == 0) {
+            return symbol_table[i].kind;
+        }
     }
     return NULL;
 }
 
-// 跳過空白和註釋
-void skip_whitespace(Compiler *c) {
-    while (c->source[c->pos]) {
-        if (isspace(c->source[c->pos])) {
-            c->pos++;
-        } else if (c->source[c->pos] == '/' && c->source[c->pos + 1] == '/') {
-            while (c->source[c->pos] && c->source[c->pos] != '\n') c->pos++;
-        } else if (c->source[c->pos] == '/' && c->source[c->pos + 1] == '*') {
-            c->pos += 2;
-            while (c->source[c->pos] && !(c->source[c->pos] == '*' && c->source[c->pos + 1] == '/'))
-                c->pos++;
-            if (c->source[c->pos]) c->pos += 2;
-        } else {
-            break;
-        }
-    }
-}
+// 編譯表達式
+void compile_expression(FILE* f);
 
-// 讀取下一個 token
-void advance(Compiler *c) {
-    skip_whitespace(c);
-    
-    if (!c->source[c->pos]) {
-        c->token_type = TK_EOF;
-        return;
+// 編譯 term
+void compile_term(FILE* f) {
+    next_token(f);
+    if (strcmp(token_type, "integerConstant") == 0) {
+        write_vm("push constant %s", current_token);
     }
-    
-    // 字符串常量
-    if (c->source[c->pos] == '"') {
-        c->pos++;
-        int i = 0;
-        while (c->source[c->pos] && c->source[c->pos] != '"') {
-            c->current_token[i++] = c->source[c->pos++];
+    else if (strcmp(token_type, "stringConstant") == 0) {
+        int len = strlen(current_token);
+        write_vm("push constant %d", len);
+        write_vm("call String.new 1");
+        for (int i = 0; i < len; i++) {
+            write_vm("push constant %d", (int)current_token[i]);
+            write_vm("call String.appendChar 2");
         }
-        c->current_token[i] = '\0';
-        if (c->source[c->pos]) c->pos++;
-        c->token_type = TK_STRING_CONST;
-        return;
     }
-    
-    // 符號
-    if (strchr("{}()[].,;+-*/&|<>=~", c->source[c->pos])) {
-        c->current_token[0] = c->source[c->pos++];
-        c->current_token[1] = '\0';
-        c->token_type = TK_SYMBOL;
-        return;
+    else if (strcmp(current_token, "true") == 0) {
+        write_vm("push constant 0");
+        write_vm("not");
     }
-    
-    // 數字
-    if (isdigit(c->source[c->pos])) {
-        int i = 0;
-        while (isdigit(c->source[c->pos])) {
-            c->current_token[i++] = c->source[c->pos++];
-        }
-        c->current_token[i] = '\0';
-        c->token_type = TK_INT_CONST;
-        return;
+    else if (strcmp(current_token, "false") == 0 || strcmp(current_token, "null") == 0) {
+        write_vm("push constant 0");
     }
-    
-    // 識別符或關鍵字
-    if (isalpha(c->source[c->pos]) || c->source[c->pos] == '_') {
-        int i = 0;
-        while (isalnum(c->source[c->pos]) || c->source[c->pos] == '_') {
-            c->current_token[i++] = c->source[c->pos++];
-        }
-        c->current_token[i] = '\0';
-        
-        // 檢查是否為關鍵字
-        const char *keywords[] = {
-            "class", "constructor", "function", "method", "field", "static",
-            "var", "int", "char", "boolean", "void", "true", "false", "null",
-            "this", "let", "do", "if", "else", "while", "return"
-        };
-        for (int j = 0; j < 21; j++) {
-            if (strcmp(c->current_token, keywords[j]) == 0) {
-                c->token_type = TK_KEYWORD;
-                return;
-            }
-        }
-        c->token_type = TK_IDENTIFIER;
-        return;
+    else if (strcmp(current_token, "this") == 0) {
+        write_vm("push pointer 0");
     }
-}
+    else if (strcmp(token_type, "identifier") == 0) {
+        char name[64];
+        strcpy(name, current_token);
+        next_token(f);
+        if (strcmp(current_token, "[") == 0) {
+            // 陣列索引
+            int idx = var_index(name);
+            const char* kind = var_kind(name);
+            if (strcmp(kind, "static") == 0) write_vm("push static %d", idx);
+            else if (strcmp(kind, "field") == 0) write_vm("push this %d", idx);
+            else if (strcmp(kind, "arg") == 0) write_vm("push argument %d", idx);
+            else write_vm("push local %d", idx);
 
-// 生成唯一標籤
-void gen_label(Compiler *c, char *buf, const char *prefix) {
-    sprintf(buf, "%s%d", prefix, c->label_count++);
-}
-
-// VM 段名稱
-const char* segment_name(SymbolKind kind) {
-    switch (kind) {
-        case SK_STATIC: return "static";
-        case SK_FIELD: return "this";
-        case SK_ARG: return "argument";
-        case SK_VAR: return "local";
-        default: return "temp";
-    }
-}
-
-// 編譯 class
-void compile_class(Compiler *c) {
-    advance(c); // class
-    advance(c); // className
-    strcpy(c->class_name, c->current_token);
-    advance(c); // {
-    
-    // classVarDec*
-    while (strcmp(c->current_token, "static") == 0 || strcmp(c->current_token, "field") == 0) {
-        SymbolKind kind = strcmp(c->current_token, "static") == 0 ? SK_STATIC : SK_FIELD;
-        advance(c); // static | field
-        char type[MAX_TOKEN_LEN];
-        strcpy(type, c->current_token);
-        advance(c); // type
-        
-        do {
-            if (strcmp(c->current_token, ",") == 0) advance(c);
-            char name[MAX_TOKEN_LEN];
-            strcpy(name, c->current_token);
-            add_symbol(&c->class_table, name, type, kind);
-            advance(c); // varName
-        } while (strcmp(c->current_token, ";") != 0);
-        advance(c); // ;
-    }
-    
-    // subroutineDec*
-    while (strcmp(c->current_token, "}") != 0) {
-        compile_subroutine(c);
-    }
-}
-
-// 編譯子程序
-void compile_subroutine(Compiler *c) {
-    init_symbol_table(&c->subroutine_table);
-    
-    char sub_type[MAX_TOKEN_LEN];
-    strcpy(sub_type, c->current_token); // constructor | function | method
-    advance(c);
-    
-    if (strcmp(sub_type, "method") == 0) {
-        add_symbol(&c->subroutine_table, "this", c->class_name, SK_ARG);
-    }
-    
-    advance(c); // return type
-    char sub_name[MAX_TOKEN_LEN];
-    strcpy(sub_name, c->current_token);
-    advance(c); // subroutineName
-    advance(c); // (
-    
-    // parameterList
-    if (strcmp(c->current_token, ")") != 0) {
-        do {
-            if (strcmp(c->current_token, ",") == 0) advance(c);
-            char type[MAX_TOKEN_LEN], name[MAX_TOKEN_LEN];
-            strcpy(type, c->current_token);
-            advance(c);
-            strcpy(name, c->current_token);
-            add_symbol(&c->subroutine_table, name, type, SK_ARG);
-            advance(c);
-        } while (strcmp(c->current_token, ")") != 0);
-    }
-    advance(c); // )
-    advance(c); // {
-    
-    // varDec*
-    int n_locals = 0;
-    while (strcmp(c->current_token, "var") == 0) {
-        advance(c);
-        char type[MAX_TOKEN_LEN];
-        strcpy(type, c->current_token);
-        advance(c);
-        
-        do {
-            if (strcmp(c->current_token, ",") == 0) advance(c);
-            char name[MAX_TOKEN_LEN];
-            strcpy(name, c->current_token);
-            add_symbol(&c->subroutine_table, name, type, SK_VAR);
-            n_locals++;
-            advance(c);
-        } while (strcmp(c->current_token, ";") != 0);
-        advance(c);
-    }
-    
-    // 輸出 function 聲明
-    fprintf(c->output, "function %s.%s %d\n", c->class_name, sub_name, n_locals);
-    
-    // constructor: 分配記憶體
-    if (strcmp(sub_type, "constructor") == 0) {
-        int n_fields = 0;
-        for (int i = 0; i < c->class_table.count; i++) {
-            if (c->class_table.symbols[i].kind == SK_FIELD) n_fields++;
+            compile_expression(f); // index
+            write_vm("add");
+            write_vm("pop pointer 1");
+            write_vm("push that 0");
+            next_token(f); // ]
         }
-        fprintf(c->output, "push constant %d\n", n_fields);
-        fprintf(c->output, "call Memory.alloc 1\n");
-        fprintf(c->output, "pop pointer 0\n");
-    }
-    
-    // method: 設置 this
-    if (strcmp(sub_type, "method") == 0) {
-        fprintf(c->output, "push argument 0\n");
-        fprintf(c->output, "pop pointer 0\n");
-    }
-    
-    compile_statements(c);
-    advance(c); // }
-}
-
-// 編譯語句
-void compile_statements(Compiler *c) {
-    while (strcmp(c->current_token, "}") != 0) {
-        if (strcmp(c->current_token, "let") == 0) {
-            advance(c);
-            char var_name[MAX_TOKEN_LEN];
-            strcpy(var_name, c->current_token);
-            Symbol *sym = find_symbol(c, var_name);
-            advance(c);
-            
-            bool is_array = strcmp(c->current_token, "[") == 0;
-            if (is_array) {
-                advance(c); // [
-                compile_expression(c);
-                advance(c); // ]
-                fprintf(c->output, "push %s %d\n", segment_name(sym->kind), sym->index);
-                fprintf(c->output, "add\n");
-            }
-            
-            advance(c); // =
-            compile_expression(c);
-            advance(c); // ;
-            
-            if (is_array) {
-                fprintf(c->output, "pop temp 0\n");
-                fprintf(c->output, "pop pointer 1\n");
-                fprintf(c->output, "push temp 0\n");
-                fprintf(c->output, "pop that 0\n");
-            } else {
-                fprintf(c->output, "pop %s %d\n", segment_name(sym->kind), sym->index);
-            }
-        } else if (strcmp(c->current_token, "if") == 0) {
-            char label1[50], label2[50];
-            gen_label(c, label1, "IF_TRUE");
-            gen_label(c, label2, "IF_FALSE");
-            
-            advance(c); // if
-            advance(c); // (
-            compile_expression(c);
-            advance(c); // )
-            fprintf(c->output, "if-goto %s\n", label1);
-            fprintf(c->output, "goto %s\n", label2);
-            fprintf(c->output, "label %s\n", label1);
-            advance(c); // {
-            compile_statements(c);
-            advance(c); // }
-            
-            if (strcmp(c->current_token, "else") == 0) {
-                char label3[50];
-                gen_label(c, label3, "IF_END");
-                fprintf(c->output, "goto %s\n", label3);
-                fprintf(c->output, "label %s\n", label2);
-                advance(c); // else
-                advance(c); // {
-                compile_statements(c);
-                advance(c); // }
-                fprintf(c->output, "label %s\n", label3);
-            } else {
-                fprintf(c->output, "label %s\n", label2);
-            }
-        } else if (strcmp(c->current_token, "while") == 0) {
-            char label1[50], label2[50];
-            gen_label(c, label1, "WHILE_EXP");
-            gen_label(c, label2, "WHILE_END");
-            
-            fprintf(c->output, "label %s\n", label1);
-            advance(c); // while
-            advance(c); // (
-            compile_expression(c);
-            advance(c); // )
-            fprintf(c->output, "not\n");
-            fprintf(c->output, "if-goto %s\n", label2);
-            advance(c); // {
-            compile_statements(c);
-            advance(c); // }
-            fprintf(c->output, "goto %s\n", label1);
-            fprintf(c->output, "label %s\n", label2);
-        } else if (strcmp(c->current_token, "do") == 0) {
-            advance(c); // do
-            compile_term(c); // subroutineCall
-            advance(c); // ;
-            fprintf(c->output, "pop temp 0\n"); // 丟棄返回值
-        } else if (strcmp(c->current_token, "return") == 0) {
-            advance(c);
-            if (strcmp(c->current_token, ";") != 0) {
-                compile_expression(c);
-            } else {
-                fprintf(c->output, "push constant 0\n");
-            }
-            advance(c); // ;
-            fprintf(c->output, "return\n");
+        else if (strcmp(current_token, ".") == 0) {
+            // 方法或函式呼叫
+            next_token(f);
+            char subroutine[64];
+            strcpy(subroutine, current_token);
+            next_token(f); // (
+            write_vm("push pointer 0"); // 假設是方法
+            compile_expression(f); // 參數
+            write_vm("call %s.%s %d", name, subroutine, 1);
         }
+        else {
+            // 單純變數
+            int idx = var_index(name);
+            const char* kind = var_kind(name);
+            debug("變數 %s 的索引是 %d kind=%s\n", name, idx, kind); // 除錯輸出
+            if (strcmp(kind, "static") == 0) write_vm("push static %d", idx);
+            else if (strcmp(kind, "field") == 0) write_vm("push this %d", idx);
+            else if (strcmp(kind, "arg") == 0) write_vm("push argument %d", idx);
+            else write_vm("push local %d", idx);
+        }
+    }
+    else if (strcmp(current_token, "(") == 0) {
+        compile_expression(f);
+        next_token(f); // )
+    }
+    else if (strchr("~-", current_token[0])) {
+        char op = current_token[0];
+        compile_term(f);
+        if (op == '-') write_vm("neg");
+        else if (op == '~') write_vm("not");
     }
 }
 
 // 編譯表達式
-void compile_expression(Compiler *c) {
-    compile_term(c);
-    
-    while (strchr("+-*/&|<>=", c->current_token[0]) && strlen(c->current_token) == 1) {
-        char op = c->current_token[0];
-        advance(c);
-        compile_term(c);
-        
+void compile_expression(FILE* f) {
+    compile_term(f);
+    next_token(f);
+    while (strchr("+-*/&|<>=", current_token[0])) {
+        char op = current_token[0];
+        compile_term(f);
         switch (op) {
-            case '+': fprintf(c->output, "add\n"); break;
-            case '-': fprintf(c->output, "sub\n"); break;
-            case '*': fprintf(c->output, "call Math.multiply 2\n"); break;
-            case '/': fprintf(c->output, "call Math.divide 2\n"); break;
-            case '&': fprintf(c->output, "and\n"); break;
-            case '|': fprintf(c->output, "or\n"); break;
-            case '<': fprintf(c->output, "lt\n"); break;
-            case '>': fprintf(c->output, "gt\n"); break;
-            case '=': fprintf(c->output, "eq\n"); break;
+            case '+': write_vm("add"); break;
+            case '-': write_vm("sub"); break;
+            case '*': write_vm("call Math.multiply 2"); break;
+            case '/': write_vm("call Math.divide 2"); break;
+            case '&': write_vm("and"); break;
+            case '|': write_vm("or"); break;
+            case '<': write_vm("lt"); break;
+            case '>': write_vm("gt"); break;
+            case '=': write_vm("eq"); break;
         }
+        next_token(f);
     }
 }
 
-// 編譯項
-void compile_term(Compiler *c) {
-    if (c->token_type == TK_INT_CONST) {
-        fprintf(c->output, "push constant %s\n", c->current_token);
-        advance(c);
-    } else if (c->token_type == TK_STRING_CONST) {
-        int len = strlen(c->current_token);
-        fprintf(c->output, "push constant %d\n", len);
-        fprintf(c->output, "call String.new 1\n");
-        for (int i = 0; i < len; i++) {
-            fprintf(c->output, "push constant %d\n", c->current_token[i]);
-            fprintf(c->output, "call String.appendChar 2\n");
-        }
-        advance(c);
-    } else if (strcmp(c->current_token, "true") == 0) {
-        fprintf(c->output, "push constant 0\n");
-        fprintf(c->output, "not\n");
-        advance(c);
-    } else if (strcmp(c->current_token, "false") == 0 || strcmp(c->current_token, "null") == 0) {
-        fprintf(c->output, "push constant 0\n");
-        advance(c);
-    } else if (strcmp(c->current_token, "this") == 0) {
-        fprintf(c->output, "push pointer 0\n");
-        advance(c);
-    } else if (strcmp(c->current_token, "(") == 0) {
-        advance(c);
-        compile_expression(c);
-        advance(c); // )
-    } else if (strchr("-~", c->current_token[0])) {
-        char op = c->current_token[0];
-        advance(c);
-        compile_term(c);
-        fprintf(c->output, op == '-' ? "neg\n" : "not\n");
+// 編譯 let 陳述
+void compile_let(FILE* f) {
+    next_token(f); // varName
+    char var_name[64];
+    strcpy(var_name, current_token);
+    next_token(f);
+    if (strcmp(current_token, "[") == 0) {
+        // 陣列賦值
+        int idx = var_index(var_name);
+        const char* kind = var_kind(var_name);
+        if (strcmp(kind, "static") == 0) write_vm("push static %d", idx);
+        else if (strcmp(kind, "field") == 0) write_vm("push this %d", idx);
+        else if (strcmp(kind, "arg") == 0) write_vm("push argument %d", idx);
+        else write_vm("push local %d", idx);
+
+        compile_expression(f); // index
+        write_vm("add");
+        next_token(f); // =
+        compile_expression(f);
+        write_vm("pop temp 0");
+        write_vm("pop pointer 1");
+        write_vm("push temp 0");
+        write_vm("pop that 0");
     } else {
-        char name[MAX_TOKEN_LEN];
-        strcpy(name, c->current_token);
-        advance(c);
-        
-        if (strcmp(c->current_token, "[") == 0) {
-            Symbol *sym = find_symbol(c, name);
-            advance(c);
-            compile_expression(c);
-            advance(c); // ]
-            fprintf(c->output, "push %s %d\n", segment_name(sym->kind), sym->index);
-            fprintf(c->output, "add\n");
-            fprintf(c->output, "pop pointer 1\n");
-            fprintf(c->output, "push that 0\n");
-        } else if (strcmp(c->current_token, "(") == 0 || strcmp(c->current_token, ".") == 0) {
-            int n_args = 0;
-            char full_name[MAX_TOKEN_LEN * 2];
-            
-            if (strcmp(c->current_token, ".") == 0) {
-                advance(c); // .
-                Symbol *sym = find_symbol(c, name);
-                if (sym) {
-                    fprintf(c->output, "push %s %d\n", segment_name(sym->kind), sym->index);
-                    sprintf(full_name, "%s.%s", sym->type, c->current_token);
-                    n_args = 1;
-                } else {
-                    sprintf(full_name, "%s.%s", name, c->current_token);
-                }
-                advance(c);
-            } else {
-                fprintf(c->output, "push pointer 0\n");
-                sprintf(full_name, "%s.%s", c->class_name, name);
-                n_args = 1;
-            }
-            
-            advance(c); // (
-            if (strcmp(c->current_token, ")") != 0) {
-                compile_expression(c);
-                n_args++;
-                while (strcmp(c->current_token, ",") == 0) {
-                    advance(c);
-                    compile_expression(c);
-                    n_args++;
-                }
-            }
-            advance(c); // )
-            fprintf(c->output, "call %s %d\n", full_name, n_args);
-        } else {
-            Symbol *sym = find_symbol(c, name);
-            if (sym) {
-                fprintf(c->output, "push %s %d\n", segment_name(sym->kind), sym->index);
+        // 一般賦值
+        next_token(f); // =
+        compile_expression(f);
+        int idx = var_index(var_name);
+        const char* kind = var_kind(var_name);
+        printf("變數 %s 的索引是 %d kind=%s\n", var_name, idx, kind); // 除錯輸出
+        if (strcmp(kind, "static") == 0) write_vm("pop static %d", idx);
+        else if (strcmp(kind, "field") == 0) write_vm("pop this %d", idx);
+        else if (strcmp(kind, "arg") == 0) write_vm("pop argument %d", idx);
+        else write_vm("pop local %d", idx);
+    }
+    next_token(f); // ;
+}
+
+// 編譯 if
+void compile_if(FILE* f) {
+    char* l1 = new_label("IF_TRUE");
+    char* l2 = new_label("IF_FALSE");
+    char* l3 = new_label("IF_END");
+
+    compile_expression(f);
+    write_vm("if-goto %s", l1);
+    write_vm("goto %s", l2);
+    write_vm("label %s", l1);
+
+    next_token(f); // {
+    next_token(f);
+    while (strcmp(current_token, "}") != 0) {
+        if (strcmp(current_token, "let") == 0) compile_let(f);
+        next_token(f);
+    }
+    write_vm("goto %s", l3);
+    write_vm("label %s", l2);
+
+    next_token(f); // else ?
+    if (strcmp(current_token, "else") == 0) {
+        next_token(f); // {
+        next_token(f);
+        while (strcmp(current_token, "}") != 0) {
+            if (strcmp(current_token, "let") == 0) compile_let(f);
+            next_token(f);
+        }
+        next_token(f);
+    }
+    write_vm("label %s", l3);
+}
+
+// 編譯子程式
+void compile_subroutine(FILE* f) {
+    debug("Compiling subroutine...\n");
+    n_locals = 0;
+    n_args = 0;
+    symbol_count = field_count; // 清除局部符號表
+
+    // next_token(f); // constructor/function/method
+    char subroutine_type[16];
+    strcpy(subroutine_type, current_token);
+    debug("Subroutine type: %s\n", subroutine_type);
+    next_token(f); // return type
+    next_token(f); // subroutine name
+    strcpy(current_subroutine, current_token);
+    debug("Subroutine name: %s\n", current_subroutine);
+    if (strcmp(subroutine_type, "method") == 0) {
+        define_symbol("this", current_class, "arg");
+    }
+
+    next_token(f); // (
+    next_token(f); // parameterList
+    while (strcmp(current_token, ")") != 0) {
+        if (strcmp(token_type, "identifier") == 0) {
+            char type[64];
+            strcpy(type, current_token);
+            next_token(f);
+            define_symbol(current_token, type, "arg");
+        }
+        next_token(f);
+    }
+    next_token(f); // {
+
+    // function/method/constructor 宣告
+    int n = n_locals;
+    write_vm("function %s.%s %d", current_class, current_subroutine, n);
+
+    if (strcmp(subroutine_type, "constructor") == 0) {
+        write_vm("push constant %d", field_count);
+        write_vm("call Memory.alloc 1");
+        write_vm("pop pointer 0");
+    } else if (strcmp(subroutine_type, "method") == 0) {
+        write_vm("push argument 0");
+        write_vm("pop pointer 0");
+    }
+
+    // 子程式體
+    debug("Compiling subroutine body...\n");
+    next_token(f);
+    while (strcmp(current_token, "}") != 0) {
+        if (strcmp(current_token, "var") == 0) {
+            next_token(f); // type
+            char type[64];
+            strcpy(type, current_token);
+            next_token(f); // varName
+            define_symbol(current_token, type, "var");
+            // define_symbol(current_token, "int", "var");
+            next_token(f);
+            debug("...current_token after varName: %s\n", current_token); // 除錯輸出
+            while (strcmp(current_token, ";") != 0) {
+                // next_token(f); // ,
+                next_token(f); // varName
+                define_symbol(current_token, type, "var");
+                next_token(f);
             }
         }
+        else if (strcmp(current_token, "let") == 0) {
+            compile_let(f);
+        }
+        else if (strcmp(current_token, "if") == 0) {
+            compile_if(f);
+        }
+        else if (strcmp(current_token, "return") == 0) {
+            next_token(f);
+            if (strcmp(current_token, ";") != 0) {
+                compile_expression(f);
+            } else {
+                write_vm("push constant 0");
+            }
+            write_vm("return");
+        }
+        next_token(f);
     }
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 3) {
-        printf("使用方法: %s <input.jack> <output.vm>\n", argv[0]);
+// 編譯 class
+void compile_class(FILE* f, const char* filename) {
+    printf("開始編譯類別 class %s\n", filename);
+    next_token(f); // class
+    next_token(f); // className
+    strcpy(current_class, current_token);
+    field_count = 0;
+    symbol_count = 0;
+
+    char vm_filename[256];
+    strcpy(vm_filename, filename);
+    strcpy(strrchr(vm_filename, '.'), ".vm");
+    vm_out = fopen(vm_filename, "w");
+
+    next_token(f); // {
+
+    while (1) {
+        next_token(f);
+        if (strcmp(current_token, "}") == 0) break;
+
+        if (strcmp(current_token, "static") == 0 || strcmp(current_token, "field") == 0) {
+            char kind[16];
+            strcpy(kind, current_token);
+            next_token(f); // type
+            char type[64];
+            strcpy(type, current_token);
+            next_token(f); // varName
+            define_symbol(current_token, type, kind);
+            next_token(f);
+            while (strcmp(current_token, ";") != 0) {
+                //next_token(f); // ,
+                next_token(f);
+                define_symbol(current_token, type, kind);
+                next_token(f);
+            }
+        }
+        else if (strcmp(current_token, "constructor") == 0 ||
+                 strcmp(current_token, "function") == 0 ||
+                 strcmp(current_token, "method") == 0) {
+            compile_subroutine(f);
+        }
+    }
+
+    fclose(vm_out);
+}
+
+// 主函式
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        printf("用法: %s <file.jack 或目錄>\n", argv[0]);
         return 1;
     }
-    
-    FILE *input = fopen(argv[1], "r");
-    if (!input) {
-        printf("無法開啟輸入檔案\n");
+
+    struct stat st;
+    if (stat(argv[1], &st) != 0) {
+        perror("檔案不存在");
         return 1;
     }
-    
-    fseek(input, 0, SEEK_END);
-    long size = ftell(input);
-    fseek(input, 0, SEEK_SET);
-    
-    char *source = malloc(size + 1);
-    fread(source, 1, size, input);
-    source[size] = '\0';
-    fclose(input);
-    
-    FILE *output = fopen(argv[2], "w");
-    if (!output) {
-        printf("無法開啟輸出檔案\n");
-        free(source);
-        return 1;
+
+    if (S_ISDIR(st.st_mode)) {
+        DIR* dir = opendir(argv[1]);
+        struct dirent* entry;
+        while ((entry = readdir(dir)) != NULL) {
+            if (strstr(entry->d_name, ".jack")) {
+                char path[512];
+                snprintf(path, sizeof(path), "%s/%s", argv[1], entry->d_name);
+                FILE* f = fopen(path, "r");
+                if (f) {
+                    printf("編譯 %s\n", path);
+                    compile_class(f, path);
+                    fclose(f);
+                }
+            }
+        }
+        closedir(dir);
+    } else {
+        FILE* f = fopen(argv[1], "r");
+        if (!f) {
+            perror("無法開啟檔案");
+            return 1;
+        }
+        printf("編譯 %s\n", argv[1]);
+        compile_class(f, argv[1]);
+        fclose(f);
     }
-    
-    Compiler compiler = {
-        .source = source,
-        .pos = 0,
-        .output = output,
-        .label_count = 0
-    };
-    
-    init_symbol_table(&compiler.class_table);
-    init_symbol_table(&compiler.subroutine_table);
-    
-    advance(&compiler);
-    compile_class(&compiler);
-    
-    fclose(output);
-    free(source);
-    
-    printf("編譯完成！\n");
+
+    printf("完成！VM 檔案已產生。\n");
     return 0;
 }
