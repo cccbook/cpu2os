@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 
+#define debugf printf
 #define MAX_TOKEN_LEN 256
 #define MAX_SYMBOLS 1000
 #define MAX_LINE 1024
@@ -110,11 +111,12 @@ void skip_whitespace(Compiler *c) {
 }
 
 // 讀取下一個 token
-void advance(Compiler *c) {
+void advance1(Compiler *c) {
     skip_whitespace(c);
     
     if (!c->source[c->pos]) {
         c->token_type = TK_EOF;
+        c->current_token[0] = '\0';
         return;
     }
     
@@ -175,6 +177,13 @@ void advance(Compiler *c) {
     }
 }
 
+void advance(Compiler *c) {
+    advance1(c);
+    printf("pos=%d Token: %s\n", c->pos, c->current_token); // 調試輸出
+    if (c->pos == 1169)
+        exit(1);
+} 
+
 // 生成唯一標籤
 void gen_label(Compiler *c, char *buf, const char *prefix) {
     sprintf(buf, "%s%d", prefix, c->label_count++);
@@ -193,9 +202,11 @@ const char* segment_name(SymbolKind kind) {
 
 // 編譯 class
 void compile_class(Compiler *c) {
+    printf("Compiling class...\n");
     // current_token 現在是 "class"
     advance(c); // 讀取 className
     strcpy(c->class_name, c->current_token);
+    debugf("class_name=%s\n", c->class_name);
     advance(c); // 讀取 {
     
     // classVarDec*
@@ -224,11 +235,15 @@ void compile_class(Compiler *c) {
 
 // 編譯子程序
 void compile_subroutine(Compiler *c) {
+    printf("Compiling subrouting...\n");
+    advance(c); // 讀取 "constructor" | "function" | "method"
+
     init_symbol_table(&c->subroutine_table);
     
     // current_token 現在是 "constructor" | "function" | "method"
     char sub_type[MAX_TOKEN_LEN];
     strcpy(sub_type, c->current_token);
+    debugf("sub_type=%s\n", sub_type);
     advance(c); // 讀取 return type
     
     if (strcmp(sub_type, "method") == 0) {
@@ -238,6 +253,7 @@ void compile_subroutine(Compiler *c) {
     advance(c); // 讀取 subroutineName
     char sub_name[MAX_TOKEN_LEN];
     strcpy(sub_name, c->current_token);
+    printf("sub_name=%s\n", sub_name);
     advance(c); // 讀取 (
     
     // parameterList
@@ -269,6 +285,7 @@ void compile_subroutine(Compiler *c) {
             strcpy(name, c->current_token);
             add_symbol(&c->subroutine_table, name, type, SK_VAR);
             n_locals++;
+            debugf("var name=%s\n", name);
             advance(c);
         } while (strcmp(c->current_token, ";") != 0);
         advance(c);
@@ -276,6 +293,7 @@ void compile_subroutine(Compiler *c) {
     
     // 輸出 function 聲明
     fprintf(c->output, "function %s.%s %d\n", c->class_name, sub_name, n_locals);
+    debugf("function %s.%s %d\n", c->class_name, sub_name, n_locals);
     
     // constructor: 分配記憶體
     if (strcmp(sub_type, "constructor") == 0) {
