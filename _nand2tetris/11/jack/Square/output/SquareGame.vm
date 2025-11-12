@@ -10,7 +10,7 @@ pop this 0
 push constant 0
 pop this 1
 push pointer 0
-return  
+return
 function SquareGame.dispose 0
 push argument 0
 pop pointer 0
@@ -21,170 +21,148 @@ push pointer 0
 call Memory.deAlloc 1
 pop temp 0
 push constant 0
-return  
+return
 function SquareGame.run 2
 push argument 0
 pop pointer 0
 push constant 0
 pop local 1
-label label1 
+label WHILE_EXP0
 push local 1
-not  
-not  
-if-goto label2 
-label label3 
+not
+not
+if-goto WHILE_END1
+label WHILE_EXP2
 push local 0
 push constant 0
-eq  
-not  
-if-goto label4 
+eq
+not
+if-goto WHILE_END3
 call Keyboard.keyPressed 0
 pop local 0
 push pointer 0
 call SquareGame.moveSquare 1
 pop temp 0
-goto label3 
-label label4 
+goto WHILE_EXP2
+label WHILE_END3
 push local 0
 push constant 81
-eq  
-not  
-if-goto label6 
-push constant 1
-neg  
+eq
+not
+if-goto IF_FALSE4
+push constant 0
+not
 pop local 1
-goto label5 
-label label6 
-label label5 
+label IF_FALSE4
 push local 0
 push constant 90
-eq  
-not  
-if-goto label8 
+eq
+not
+if-goto IF_FALSE6
 push this 0
 call Square.decSize 1
 pop temp 0
-goto label7 
-label label8 
-label label7 
+label IF_FALSE6
 push local 0
 push constant 88
-eq  
-not  
-if-goto label10 
+eq
+not
+if-goto IF_FALSE8
 push this 0
 call Square.incSize 1
 pop temp 0
-goto label9 
-label label10 
-label label9 
+label IF_FALSE8
 push local 0
 push constant 131
-eq  
-not  
-if-goto label12 
+eq
+not
+if-goto IF_FALSE10
 push constant 1
 pop this 1
-goto label11 
-label label12 
-label label11 
+label IF_FALSE10
 push local 0
 push constant 133
-eq  
-not  
-if-goto label14 
+eq
+not
+if-goto IF_FALSE12
 push constant 2
 pop this 1
-goto label13 
-label label14 
-label label13 
+label IF_FALSE12
 push local 0
 push constant 130
-eq  
-not  
-if-goto label16 
+eq
+not
+if-goto IF_FALSE14
 push constant 3
 pop this 1
-goto label15 
-label label16 
-label label15 
+label IF_FALSE14
 push local 0
 push constant 132
-eq  
-not  
-if-goto label18 
+eq
+not
+if-goto IF_FALSE16
 push constant 4
 pop this 1
-goto label17 
-label label18 
-label label17 
-label label19 
+label IF_FALSE16
+label WHILE_EXP18
 push local 0
 push constant 0
-eq  
-not  
-not  
-if-goto label20 
+eq
+not
+not
+if-goto WHILE_END19
 call Keyboard.keyPressed 0
 pop local 0
 push pointer 0
 call SquareGame.moveSquare 1
 pop temp 0
-goto label19 
-label label20 
-goto label1 
-label label2 
+goto WHILE_EXP18
+label WHILE_END19
+goto WHILE_EXP0
+label WHILE_END1
 push constant 0
-return  
+return
 function SquareGame.moveSquare 0
 push argument 0
 pop pointer 0
 push this 1
 push constant 1
-eq  
-not  
-if-goto label22 
+eq
+not
+if-goto IF_FALSE20
 push this 0
 call Square.moveUp 1
 pop temp 0
-goto label21 
-label label22 
-label label21 
+label IF_FALSE20
 push this 1
 push constant 2
-eq  
-not  
-if-goto label24 
+eq
+not
+if-goto IF_FALSE22
 push this 0
 call Square.moveDown 1
 pop temp 0
-goto label23 
-label label24 
-label label23 
+label IF_FALSE22
 push this 1
 push constant 3
-eq  
-not  
-if-goto label26 
+eq
+not
+if-goto IF_FALSE24
 push this 0
 call Square.moveLeft 1
 pop temp 0
-goto label25 
-label label26 
-label label25 
+label IF_FALSE24
 push this 1
 push constant 4
-eq  
-not  
-if-goto label28 
+eq
+not
+if-goto IF_FALSE26
 push this 0
 call Square.moveRight 1
 pop temp 0
-goto label27 
-label label28 
-label label27 
+label IF_FALSE26
 push constant 5
 call Sys.wait 1
 pop temp 0
 push constant 0
-return  
+return

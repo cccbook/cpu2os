@@ -394,38 +394,6 @@ void compile_let(FILE* f) {
     next_token(f); // ;
 }
 
-// 編譯 if
-void compile_if(FILE* f) {
-    char* l1 = new_label("IF_TRUE");
-    char* l2 = new_label("IF_FALSE");
-    char* l3 = new_label("IF_END");
-
-    compile_expression(f);
-    write_vm("if-goto %s", l1);
-    write_vm("goto %s", l2);
-    write_vm("label %s", l1);
-
-    next_token(f); // {
-    next_token(f);
-    while (strcmp(current_token, "}") != 0) {
-        if (strcmp(current_token, "let") == 0) compile_let(f);
-        next_token(f);
-    }
-    write_vm("goto %s", l3);
-    write_vm("label %s", l2);
-
-    next_token(f); // else ?
-    if (strcmp(current_token, "else") == 0) {
-        next_token(f); // {
-        next_token(f);
-        while (strcmp(current_token, "}") != 0) {
-            if (strcmp(current_token, "let") == 0) compile_let(f);
-            next_token(f);
-        }
-        next_token(f);
-    }
-    write_vm("label %s", l3);
-}
 
 // 編譯 do 語句
 void compile_do(FILE* f) {
@@ -525,6 +493,84 @@ void compile_do(FILE* f) {
     write_vm("pop temp 0");
 
     next_token(f); // 吃掉 ;
+}
+
+// 編譯 if
+void compile_if(FILE* f) {
+    char* l1 = new_label("IF_TRUE");
+    char* l2 = new_label("IF_FALSE");
+    char* l3 = new_label("IF_END");
+
+    compile_expression(f);
+    write_vm("if-goto %s", l1);
+    write_vm("goto %s", l2);
+    write_vm("label %s", l1);
+
+    next_token(f); // {
+    next_token(f);
+    while (strcmp(current_token, "}") != 0) {
+        if (strcmp(current_token, "let") == 0) compile_let(f);
+        next_token(f);
+    }
+    write_vm("goto %s", l3);
+    write_vm("label %s", l2);
+
+    next_token(f); // else ?
+    if (strcmp(current_token, "else") == 0) {
+        next_token(f); // {
+        next_token(f);
+        while (strcmp(current_token, "}") != 0) {
+            if (strcmp(current_token, "let") == 0) compile_let(f);
+            next_token(f);
+        }
+        next_token(f);
+    }
+    write_vm("label %s", l3);
+}
+
+// 編譯 while 迴圈
+void compile_while(FILE* f) {
+    char* label_top   = new_label("WHILE_TOP");
+    char* label_end   = new_label("WHILE_END");
+
+    write_vm("label %s", label_top);   // 迴圈開始
+
+    next_token(f);                     // 吃掉 '('
+    compile_expression(f);             // 條件式
+    write_vm("not");                   // 條件為 false 時跳出
+    write_vm("if-goto %s", label_end);
+
+    next_token(f);                     // 吃掉 ')'
+    next_token(f);                     // 吃掉 '{'
+    next_token(f);                     // 第一個語句或 '}'
+    while (strcmp(current_token, "}") != 0) {
+        if (strcmp(current_token, "let") == 0) {
+            compile_let(f);
+        }
+        else if (strcmp(current_token, "do") == 0) {
+            compile_do(f);
+        }
+        else if (strcmp(current_token, "if") == 0) {
+            compile_if(f);
+        }
+        else if (strcmp(current_token, "while") == 0) {
+            compile_while(f);          // 巢狀 while
+        }
+        else if (strcmp(current_token, "return") == 0) {
+            next_token(f);
+            if (strcmp(current_token, ";") != 0) {
+                compile_expression(f);
+            } else {
+                write_vm("push constant 0");
+            }
+            write_vm("return");
+        }
+        next_token(f);
+    }
+    next_token(f);                     // 吃掉 '}' (已經在迴圈外)
+
+    write_vm("goto %s", label_top);    // 回到條件判斷
+    write_vm("label %s", label_end);   // 迴圈結束
 }
 
 // 編譯子程式
