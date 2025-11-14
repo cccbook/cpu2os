@@ -1,0 +1,11 @@
+fn add(a, b) {
+  let sum = a + b;
+  return sum;
+}
+
+fn main() {
+  let x = 10;
+  let y = add(x, 20);
+  let z = add(y, 5);
+  return z;
+}
