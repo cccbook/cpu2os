@@ -1,14 +1,11 @@
 // ==========================================================
-// file: compiler.c (Corrected Version)
+// file: compiler.c (Expanded with if/while support)
 // ==========================================================
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "ir.h"
-//======================================================================
-// 1. 定義 (Token, AST, IR)
-//======================================================================
 
 // --- Token 類型 ---
 typedef enum
@@ -136,7 +133,7 @@ void emit(OpCode op, const char *result, const char *arg1, const char *arg2)
 }
 
 //======================================================================
-// 3. 詞法分析器 (Lexer) - (無變更)
+// 3. 詞法分析器 (Lexer)
 //======================================================================
 void read_char(Lexer *l)
 {
@@ -302,7 +299,7 @@ Token next_token(Lexer *l)
 }
 
 //======================================================================
-// 4. 語法分析器 (Parser) - *** 核心修正 ***
+// 4. 語法分析器 (Parser) - *** 新增 IF/WHILE 解析 ***
 //======================================================================
 ASTNode *create_ast_node(NodeType type)
 {
@@ -326,7 +323,6 @@ Parser *create_parser(Lexer *l)
     parser_next_token(p);
     return p;
 }
-
 int get_precedence(TokenType type)
 {
     switch (type)
@@ -376,11 +372,9 @@ ASTNode *parse_call_expression(Parser *p, ASTNode *function)
     return node;
 }
 
-// ======================= CORRECTED FUNCTION =======================
 ASTNode *parse_expression(Parser *p, int precedence)
 {
     ASTNode *left = NULL;
-    // --- Prefix parsing ---
     if (p->current_token.type == TOKEN_INTEGER)
     {
         left = create_ast_node(NODE_TYPE_NUM);
@@ -397,15 +391,13 @@ ASTNode *parse_expression(Parser *p, int precedence)
         left = parse_expression(p, 0);
         if (p->peek_token.type != TOKEN_RPAREN)
             error(p->peek_token.line, p->peek_token.col, "表達式缺少 ')'");
-        parser_next_token(p); // Consume ')'
+        parser_next_token(p);
     }
     else
     {
         error(p->current_token.line, p->current_token.col, "無效的表達式起始符號");
     }
-
-    // --- Infix parsing ---
-    while (p->peek_token.type != TOKEN_SEMI && precedence < get_precedence(p->peek_token.type))
+    while (p->peek_token.type != TOKEN_SEMI && p->peek_token.type != TOKEN_RPAREN && p->peek_token.type != TOKEN_RBRACE && precedence < get_precedence(p->peek_token.type))
     {
         parser_next_token(p);
         if (p->current_token.type == TOKEN_LPAREN)
@@ -425,7 +417,6 @@ ASTNode *parse_expression(Parser *p, int precedence)
     }
     return left;
 }
-// =================================================================
 
 ASTNode *parse_return_statement(Parser *p)
 {
@@ -437,7 +428,6 @@ ASTNode *parse_return_statement(Parser *p)
         parser_next_token(p);
     return node;
 }
-
 ASTNode *parse_let_statement(Parser *p)
 {
     ASTNode *node = create_ast_node(NODE_TYPE_VAR_DECL);
@@ -456,6 +446,52 @@ ASTNode *parse_let_statement(Parser *p)
     return node;
 }
 
+// ======================= NEW FUNCTION =======================
+
+ASTNode* parse_if_statement(Parser *p) {
+    ASTNode* node = create_ast_node(NODE_TYPE_IF);
+    parser_next_token(p); // eat if
+    if (p->current_token.type != TOKEN_LPAREN) error(p->current_token.line, p->current_token.col, "if 條件式缺少 '('");
+    parser_next_token(p);
+    node->condition = parse_expression(p, 0);
+
+    // **** BUG FIX IS HERE ****
+    // We must check the *peek* token, not the current one.
+    if (p->peek_token.type != TOKEN_RPAREN) error(p->peek_token.line, p->peek_token.col, "if 條件式缺少 ')'");
+    parser_next_token(p); // Consume expression's last token
+    parser_next_token(p); // Consume ')'
+
+    if (p->current_token.type != TOKEN_LBRACE) error(p->current_token.line, p->current_token.col, "if 主體缺少 '{'");
+    node->consequence = parse_block_statement(p);
+    if (p->peek_token.type == TOKEN_ELSE) {
+        parser_next_token(p); // eat '}'
+        parser_next_token(p); // eat 'else'
+        if (p->current_token.type != TOKEN_LBRACE) error(p->current_token.line, p->current_token.col, "else 主體缺少 '{'");
+        node->alternative = parse_block_statement(p);
+    }
+    return node;
+}
+
+
+ASTNode* parse_while_statement(Parser *p) {
+    ASTNode* node = create_ast_node(NODE_TYPE_WHILE);
+    parser_next_token(p); // eat while
+    if (p->current_token.type != TOKEN_LPAREN) error(p->current_token.line, p->current_token.col, "while 條件式缺少 '('");
+    parser_next_token(p);
+    node->condition = parse_expression(p, 0);
+
+    // **** BUG FIX IS HERE ****
+    // We must check the *peek* token, not the current one.
+    if (p->peek_token.type != TOKEN_RPAREN) error(p->peek_token.line, p->peek_token.col, "while 條件式缺少 ')'");
+    parser_next_token(p); // Consume expression's last token
+    parser_next_token(p); // Consume ')'
+
+    if (p->current_token.type != TOKEN_LBRACE) error(p->current_token.line, p->current_token.col, "while 主體缺少 '{'");
+    node->consequence = parse_block_statement(p);
+    return node;
+}
+
+// ======================= MODIFIED FUNCTION =======================
 ASTNode *parse_statement(Parser *p)
 {
     switch (p->current_token.type)
@@ -464,6 +500,10 @@ ASTNode *parse_statement(Parser *p)
         return parse_let_statement(p);
     case TOKEN_RETURN:
         return parse_return_statement(p);
+    case TOKEN_IF:
+        return parse_if_statement(p); // NEW
+    case TOKEN_WHILE:
+        return parse_while_statement(p); // NEW
     case TOKEN_LBRACE:
         return parse_block_statement(p);
     default:
@@ -477,21 +517,20 @@ ASTNode *parse_block_statement(Parser *p)
     ASTNode *block = create_ast_node(NODE_TYPE_BLOCK);
     block->statements = (ASTNode **)malloc(sizeof(ASTNode *) * 100);
     block->statement_count = 0;
-    parser_next_token(p); // eat {
+    parser_next_token(p);
     while (p->current_token.type != TOKEN_RBRACE && p->current_token.type != TOKEN_EOF)
     {
         block->statements[block->statement_count++] = parse_statement(p);
-        parser_next_token(p); // Consume statement's last token (e.g., ';')
+        parser_next_token(p);
     }
     if (p->current_token.type != TOKEN_RBRACE)
         error(p->current_token.line, p->current_token.col, "區塊語句缺少 '}'");
     return block;
 }
-
 ASTNode *parse_function_declaration(Parser *p)
 {
     ASTNode *node = create_ast_node(NODE_TYPE_FUNC_DECL);
-    parser_next_token(p); // eat fn
+    parser_next_token(p);
     if (p->current_token.type != TOKEN_IDENTIFIER)
         error(p->current_token.line, p->current_token.col, "函數宣告缺少名稱");
     node->left = create_ast_node(NODE_TYPE_IDENTIFIER);
@@ -524,7 +563,6 @@ ASTNode *parse_function_declaration(Parser *p)
     node->body = parse_block_statement(p);
     return node;
 }
-
 ASTNode *parse_toplevel_declaration(Parser *p)
 {
     if (p->current_token.type == TOKEN_FN)
@@ -534,7 +572,6 @@ ASTNode *parse_toplevel_declaration(Parser *p)
     error(p->current_token.line, p->current_token.col, "只允許在頂層宣告函數");
     return NULL;
 }
-
 ASTNode *parse_program(Parser *p)
 {
     ASTNode *program = create_ast_node(NODE_TYPE_PROGRAM);
@@ -549,7 +586,7 @@ ASTNode *parse_program(Parser *p)
 }
 
 //======================================================================
-// 5. 中間碼生成器 (IR Generator) - (無變更)
+// 5. 中間碼生成器 (IR Generator) - *** 新增 IF/WHILE IR生成 ***
 //======================================================================
 typedef struct
 {
@@ -581,11 +618,13 @@ void generate_ir_for_function(ASTNode *node)
     generate_ir(node->body, &local_syms);
     emit(OP_FUNC_END, NULL, NULL, NULL);
 }
+
+// ======================= MODIFIED FUNCTION =======================
 char *generate_ir(ASTNode *node, SymbolTable *local_symbols)
 {
     if (!node)
         return NULL;
-    char *left_reg = NULL, *right_reg = NULL;
+    char *left_reg = NULL, *right_reg = NULL, *cond_reg = NULL;
     switch (node->type)
     {
     case NODE_TYPE_PROGRAM:
@@ -685,6 +724,45 @@ char *generate_ir(ASTNode *node, SymbolTable *local_symbols)
         free(right_reg);
         return result_reg;
     }
+    // ======================= NEW CASE =======================
+    case NODE_TYPE_IF:
+    {
+        char *else_label = new_label();
+        char *end_label = new_label();
+        cond_reg = generate_ir(node->condition, local_symbols);
+        emit(OP_IF_FALSE_GOTO, NULL, cond_reg, else_label);
+        free(cond_reg);
+        generate_ir(node->consequence, local_symbols);
+        if (node->alternative)
+        {
+            emit(OP_GOTO, end_label, NULL, NULL);
+        }
+        emit(OP_LABEL, else_label, NULL, NULL);
+        if (node->alternative)
+        {
+            generate_ir(node->alternative, local_symbols);
+        }
+        emit(OP_LABEL, end_label, NULL, NULL);
+        free(else_label);
+        free(end_label);
+        return NULL;
+    }
+    // ======================= NEW CASE =======================
+    case NODE_TYPE_WHILE:
+    {
+        char *start_label = new_label();
+        char *end_label = new_label();
+        emit(OP_LABEL, start_label, NULL, NULL);
+        cond_reg = generate_ir(node->condition, local_symbols);
+        emit(OP_IF_FALSE_GOTO, NULL, cond_reg, end_label);
+        free(cond_reg);
+        generate_ir(node->consequence, local_symbols);
+        emit(OP_GOTO, start_label, NULL, NULL);
+        emit(OP_LABEL, end_label, NULL, NULL);
+        free(start_label);
+        free(end_label);
+        return NULL;
+    }
     default:
         break;
     }
@@ -692,7 +770,7 @@ char *generate_ir(ASTNode *node, SymbolTable *local_symbols)
 }
 
 //======================================================================
-// 6. 主程式 (輸出檔案) - (無變更)
+// 6. 主程式 (輸出檔案)
 //======================================================================
 void write_ir_to_file(FILE *f, IR_Instruction *code, int count)
 {
@@ -721,77 +799,59 @@ void write_func_info_to_file(FILE *f, ASTNode *ast)
 
 int main(int argc, char *argv[])
 {
-    // 1. 檢查命令列參數
-    if (argc != 3) {
+    if (argc != 3)
+    {
         fprintf(stderr, "用法: %s <source_file> <ir_file>\n", argv[0]);
         return 1;
     }
-
     const char *input_filename = argv[1];
-    char *source_code = NULL; // 用來儲存檔案內容的緩衝區
+    char *source_code = NULL;
     FILE *source_file = fopen(input_filename, "r");
-
-    // 2. 開啟並讀取原始碼檔案
-    if (!source_file) {
+    if (!source_file)
+    {
         perror("無法開啟來源檔案");
         return 1;
     }
-
-    // 計算檔案大小
     fseek(source_file, 0, SEEK_END);
     long file_size = ftell(source_file);
-    rewind(source_file); // 或 fseek(source_file, 0, SEEK_SET);
-
-    // 分配記憶體 (+1 是為了字串結尾的 '\0')
+    rewind(source_file);
     source_code = (char *)malloc(file_size + 1);
-    if (!source_code) {
+    if (!source_code)
+    {
         fprintf(stderr, "無法分配記憶體來讀取檔案\n");
         fclose(source_file);
         return 1;
     }
-
-    // 將整個檔案讀入緩衝區
     size_t read_size = fread(source_code, 1, file_size, source_file);
-    if ((long) read_size != file_size) {
+    if ((long)read_size != file_size)
+    {
         fprintf(stderr, "讀取檔案時發生錯誤\n");
         free(source_code);
         fclose(source_file);
         return 1;
     }
-    source_code[file_size] = '\0'; // 確保字串以 null 結尾
-
+    source_code[file_size] = '\0';
     fclose(source_file);
-
-    // 3. 開始編譯流程
     printf("--- 編譯階段 ---\n");
     printf("從檔案 '%s' 讀取原始碼...\n", input_filename);
-
     global_symbols.count = 0;
     Lexer *lexer = create_lexer(source_code);
     Parser *parser = create_parser(lexer);
     ASTNode *ast = parse_program(parser);
     generate_ir(ast, NULL);
-
-    // 4. 將 IR 寫入輸出檔
     const char *output_filename = argv[2];
     FILE *out_file = fopen(output_filename, "w");
-    if (!out_file) {
+    if (!out_file)
+    {
         perror("無法開啟輸出檔案");
-        free(source_code); // 發生錯誤時也要釋放記憶體
+        free(source_code);
         return 1;
     }
-    
     write_func_info_to_file(out_file, ast);
     fprintf(out_file, "CODE_START\n");
     write_ir_to_file(out_file, ir_code, ir_count);
     fclose(out_file);
-
     printf("\n中間碼已成功寫入到 %s\n", output_filename);
-
-    // 5. 釋放為原始碼分配的記憶體
     free(source_code);
-    
-    // 在一個真實的應用中，您也應該釋放 lexer, parser, ast 等...
-    
     return 0;
 }

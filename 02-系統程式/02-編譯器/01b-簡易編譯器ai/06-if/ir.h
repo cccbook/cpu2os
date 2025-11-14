@@ -22,7 +22,7 @@ typedef enum
     OP_GT,
     OP_LOAD_CONST,
     OP_LOAD_VAR,
-    OP_STORE_VAR,
+    OP_STORE_VAR,//10
     OP_GOTO,
     OP_IF_FALSE_GOTO,
     OP_LABEL,
@@ -44,4 +44,4 @@ typedef struct
 } IR_Instruction;
 
 OpCode string_to_opcode(const char *s);
-char *opcode_to_string(OpCode opcode);
+const char *opcode_to_string(OpCode opcode);

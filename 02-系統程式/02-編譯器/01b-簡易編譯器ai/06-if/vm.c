@@ -334,6 +334,39 @@ void vm_run(VM *vm)
             set_var(vm, instr.result, vm->retval);
             break;
 
+        case OP_GOTO:
+        {
+            int target_addr = find_label_addr(vm, instr.result);
+            if (target_addr != -1)
+            {
+                vm->ip = target_addr; // Set IP to the label's address
+            }
+            else
+            {
+                fprintf(stderr, "VM 執行錯誤: 找不到標籤 '%s'\n", instr.result);
+                vm->running = 0;
+            }
+            break;
+        }
+        case OP_IF_FALSE_GOTO:
+        {
+            int cond_val = get_var(vm, instr.arg1);
+            if (cond_val == 0)
+            { // Condition is false
+                int target_addr = find_label_addr(vm, instr.arg2);
+                if (target_addr != -1)
+                {
+                    vm->ip = target_addr; // Jump
+                }
+                else
+                {
+                    fprintf(stderr, "VM 執行錯誤: 找不到標籤 '%s'\n", instr.arg2);
+                    vm->running = 0;
+                }
+            }
+            // If condition is true, do nothing and continue to the next instruction
+            break;
+        }
         default:
             fprintf(stderr, "VM 錯誤: 在位址 %d 遇到未知的指令 %d\n", vm->ip - 1, instr.opcode);
             vm->running = 0;
