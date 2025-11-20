@@ -1,0 +1,19 @@
+fn factorial(n) {
+  let result = 0;
+  if (n == 0) {
+    result = 1;
+  } else {
+    let next_n = n - 1;
+    let temp_result = factorial(next_n);
+    result = n * temp_result;
+  }
+  
+  return result;
+}
+
+fn main() {
+  // Let's calculate the factorial of 10
+  // The expected result is 3628800
+  let value = factorial(10);
+  return value;
+}

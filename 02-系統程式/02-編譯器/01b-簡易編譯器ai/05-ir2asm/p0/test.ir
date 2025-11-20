@@ -1,0 +1,31 @@
+FUNC_INFO add 2 a b
+FUNC_INFO main 0
+CODE_START
+FUNC_BEGIN add _ _
+LOAD_VAR t0 a _
+LOAD_VAR t1 b _
+ADD t2 t0 t1
+STORE_VAR sum t2 _
+LOAD_VAR t3 sum _
+RETURN _ t3 _
+FUNC_END _ _ _
+FUNC_BEGIN main _ _
+LOAD_CONST t4 10 _
+STORE_VAR x t4 _
+LOAD_VAR t5 x _
+ARG _ t5 _
+LOAD_CONST t6 20 _
+ARG _ t6 _
+CALL _ add 2
+GET_RETVAL t7 _ _
+STORE_VAR y t7 _
+LOAD_VAR t8 y _
+ARG _ t8 _
+LOAD_CONST t9 5 _
+ARG _ t9 _
+CALL _ add 2
+GET_RETVAL t10 _ _
+STORE_VAR z t10 _
+LOAD_VAR t11 z _
+RETURN _ t11 _
+FUNC_END _ _ _
