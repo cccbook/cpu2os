@@ -5,20 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// --- REPL 輔助結構 ---
-
-// 定義一個結構來處理使用者輸入緩衝區
-typedef struct {
-    char *buffer;
-    size_t buffer_length;
-    ssize_t input_length;
-} InputBuffer;
-
-// --- 輔助函式原型 ---
-void print_prompt();
-InputBuffer *new_input_buffer();
-void read_input(InputBuffer *input_buffer);
-void close_input_buffer(InputBuffer *input_buffer);
 
 // --- 核心連線處理 ---
 
