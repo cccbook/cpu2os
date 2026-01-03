@@ -1,0 +1,1 @@
+python rvasm.py asm/sum.asm asm/sum.hex --hex-only

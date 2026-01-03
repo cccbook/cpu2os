@@ -1,0 +1,95 @@
+function Square.new 0
+push constant 3
+call Memory.alloc 1
+pop pointer 0
+return
+push constant 0
+return
+function Square.draw 0
+push argument 0
+pop pointer 0
+push constant 0
+return
+function Square.erase 0
+push argument 0
+pop pointer 0
+push constant 0
+return
+function Square.incSize 0
+push argument 0
+pop pointer 0
+push this 1
+push constant 254
+lt
+if-goto IF_END_2
+goto IF_END_2
+label IF_END_2
+pop this 2
+goto IF_END_2
+label IF_END_2
+label IF_END_2
+function Square.decSize 0
+push argument 0
+pop pointer 0
+push this 2
+if-goto IF_END_5
+goto IF_END_5
+label IF_END_5
+push constant 2
+neg
+pop this 2
+goto IF_END_5
+label IF_END_5
+label IF_END_5
+function Square.moveUp 0
+push argument 0
+pop pointer 0
+push this 1
+if-goto IF_END_8
+goto IF_END_8
+label IF_END_8
+push constant 2
+neg
+pop this 1
+goto IF_END_8
+label IF_END_8
+label IF_END_8
+function Square.moveDown 0
+push argument 0
+pop pointer 0
+push this 1
+push constant 254
+lt
+if-goto IF_END_11
+goto IF_END_11
+label IF_END_11
+pop this 1
+goto IF_END_11
+label IF_END_11
+label IF_END_11
+function Square.moveLeft 0
+push argument 0
+pop pointer 0
+push this 0
+if-goto IF_END_14
+goto IF_END_14
+label IF_END_14
+push constant 2
+neg
+pop this 0
+goto IF_END_14
+label IF_END_14
+label IF_END_14
+function Square.moveRight 0
+push argument 0
+pop pointer 0
+push this 0
+push constant 510
+lt
+if-goto IF_END_17
+goto IF_END_17
+label IF_END_17
+pop this 0
+goto IF_END_17
+label IF_END_17
+label IF_END_17

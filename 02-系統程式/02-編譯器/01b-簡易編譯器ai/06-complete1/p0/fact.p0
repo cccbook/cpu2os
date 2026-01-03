@@ -1,0 +1,17 @@
+fn factorial(n) {
+  let result = 0;
+  if (n == 0) {
+    let result = 1;
+  } else {
+    let next_n = n - 1;
+    let temp_result = factorial(next_n);
+    let result = n * temp_result;
+  }
+  
+  return result;
+}
+
+fn main() {
+  let value = factorial(5);
+  return value;
+}

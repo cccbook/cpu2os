@@ -1,0 +1,16 @@
+function Main.main 0
+pop local 0
+push constant 0
+return
+function Main.more 0
+push constant 0
+if-goto IF_END_23
+goto IF_END_23
+label IF_END_23
+pop local 2
+goto IF_END_23
+label IF_END_23
+pop local 0
+pop local 1
+pop local 0
+label IF_END_23

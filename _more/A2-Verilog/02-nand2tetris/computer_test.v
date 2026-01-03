@@ -9,7 +9,7 @@ integer i;
 
 initial
 begin
-  $readmemb("sum.hack", c.rom.m);
+  $readmemb("sum.hack0", c.rom.m);
   for (i=0; i < 32; i=i+1) begin
     // $display("%4x: %x", i, c.rom.m[i]);
     $display("%4x: %b", i, c.rom.m[i]);
